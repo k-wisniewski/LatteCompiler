@@ -99,7 +99,7 @@ char* PrintAbsyn::print(Visitable *v)
 }
 void PrintAbsyn::visitProgram(Program*p) {} //abstract class
 
-void PrintAbsyn::visitTProgram(TProgram* p)
+void PrintAbsyn::visitCProgram(CProgram* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -112,7 +112,7 @@ void PrintAbsyn::visitTProgram(TProgram* p)
 
 void PrintAbsyn::visitTopDef(TopDef*p) {} //abstract class
 
-void PrintAbsyn::visitTFnDef(TFnDef* p)
+void PrintAbsyn::visitCFnDef(CFnDef* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -130,7 +130,7 @@ void PrintAbsyn::visitTFnDef(TFnDef* p)
 
 void PrintAbsyn::visitListTopDef(ListTopDef *listtopdef)
 {
-  for (ListTopDef::const_iterator i = listtopdef->begin() ; i != listtopdef->end() ; ++i)
+  for (std::vector<TopDef*>::const_iterator i = listtopdef->begin() ; i != listtopdef->end() ; ++i)
   {
     (*i)->accept(this);
     if (i != listtopdef->end() - 1) render("");
@@ -139,7 +139,7 @@ void PrintAbsyn::visitListTopDef(ListTopDef *listtopdef)
 
 void PrintAbsyn::visitArg(Arg*p) {} //abstract class
 
-void PrintAbsyn::visitTArg(TArg* p)
+void PrintAbsyn::visitCArg(CArg* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -154,7 +154,7 @@ void PrintAbsyn::visitTArg(TArg* p)
 
 void PrintAbsyn::visitListArg(ListArg *listarg)
 {
-  for (ListArg::const_iterator i = listarg->begin() ; i != listarg->end() ; ++i)
+  for (std::vector<Arg*>::const_iterator i = listarg->begin() ; i != listarg->end() ; ++i)
   {
     (*i)->accept(this);
     if (i != listarg->end() - 1) render(',');
@@ -163,7 +163,7 @@ void PrintAbsyn::visitListArg(ListArg *listarg)
 
 void PrintAbsyn::visitBlock(Block*p) {} //abstract class
 
-void PrintAbsyn::visitTBlock(TBlock* p)
+void PrintAbsyn::visitSBlock(SBlock* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -178,7 +178,7 @@ void PrintAbsyn::visitTBlock(TBlock* p)
 
 void PrintAbsyn::visitListStmt(ListStmt *liststmt)
 {
-  for (ListStmt::const_iterator i = liststmt->begin() ; i != liststmt->end() ; ++i)
+  for (std::vector<Stmt*>::const_iterator i = liststmt->begin() ; i != liststmt->end() ; ++i)
   {
     (*i)->accept(this);
     render("");
@@ -187,7 +187,7 @@ void PrintAbsyn::visitListStmt(ListStmt *liststmt)
 
 void PrintAbsyn::visitStmt(Stmt*p) {} //abstract class
 
-void PrintAbsyn::visitEmpty(Empty* p)
+void PrintAbsyn::visitSEmpty(SEmpty* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -199,7 +199,7 @@ void PrintAbsyn::visitEmpty(Empty* p)
   _i_ = oldi;
 }
 
-void PrintAbsyn::visitBStmt(BStmt* p)
+void PrintAbsyn::visitSBStmt(SBStmt* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -211,7 +211,7 @@ void PrintAbsyn::visitBStmt(BStmt* p)
   _i_ = oldi;
 }
 
-void PrintAbsyn::visitDecl(Decl* p)
+void PrintAbsyn::visitSDecl(SDecl* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -224,7 +224,7 @@ void PrintAbsyn::visitDecl(Decl* p)
   _i_ = oldi;
 }
 
-void PrintAbsyn::visitAss(Ass* p)
+void PrintAbsyn::visitSAss(SAss* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -239,7 +239,7 @@ void PrintAbsyn::visitAss(Ass* p)
   _i_ = oldi;
 }
 
-void PrintAbsyn::visitIncr(Incr* p)
+void PrintAbsyn::visitSIncr(SIncr* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -253,7 +253,7 @@ void PrintAbsyn::visitIncr(Incr* p)
   _i_ = oldi;
 }
 
-void PrintAbsyn::visitDecr(Decr* p)
+void PrintAbsyn::visitSDecr(SDecr* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -267,7 +267,7 @@ void PrintAbsyn::visitDecr(Decr* p)
   _i_ = oldi;
 }
 
-void PrintAbsyn::visitRet(Ret* p)
+void PrintAbsyn::visitSRet(SRet* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -281,7 +281,7 @@ void PrintAbsyn::visitRet(Ret* p)
   _i_ = oldi;
 }
 
-void PrintAbsyn::visitVRet(VRet* p)
+void PrintAbsyn::visitSVRet(SVRet* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -294,7 +294,7 @@ void PrintAbsyn::visitVRet(VRet* p)
   _i_ = oldi;
 }
 
-void PrintAbsyn::visitCond(Cond* p)
+void PrintAbsyn::visitSCond(SCond* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -310,7 +310,7 @@ void PrintAbsyn::visitCond(Cond* p)
   _i_ = oldi;
 }
 
-void PrintAbsyn::visitCondElse(CondElse* p)
+void PrintAbsyn::visitSCondElse(SCondElse* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -328,7 +328,7 @@ void PrintAbsyn::visitCondElse(CondElse* p)
   _i_ = oldi;
 }
 
-void PrintAbsyn::visitWhile(While* p)
+void PrintAbsyn::visitSWhile(SWhile* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -359,7 +359,7 @@ void PrintAbsyn::visitSExp(SExp* p)
 
 void PrintAbsyn::visitItem(Item*p) {} //abstract class
 
-void PrintAbsyn::visitNoInit(NoInit* p)
+void PrintAbsyn::visitSNoInit(SNoInit* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -371,7 +371,7 @@ void PrintAbsyn::visitNoInit(NoInit* p)
   _i_ = oldi;
 }
 
-void PrintAbsyn::visitInit(Init* p)
+void PrintAbsyn::visitSInit(SInit* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -387,7 +387,7 @@ void PrintAbsyn::visitInit(Init* p)
 
 void PrintAbsyn::visitListItem(ListItem *listitem)
 {
-  for (ListItem::const_iterator i = listitem->begin() ; i != listitem->end() ; ++i)
+  for (std::vector<Item*>::const_iterator i = listitem->begin() ; i != listitem->end() ; ++i)
   {
     (*i)->accept(this);
     if (i != listitem->end() - 1) render(',');
@@ -618,7 +618,7 @@ void PrintAbsyn::visitEOr(EOr* p)
 
 void PrintAbsyn::visitListExpr(ListExpr *listexpr)
 {
-  for (ListExpr::const_iterator i = listexpr->begin() ; i != listexpr->end() ; ++i)
+  for (std::vector<Expr*>::const_iterator i = listexpr->begin() ; i != listexpr->end() ; ++i)
   {
     (*i)->accept(this);
     if (i != listexpr->end() - 1) render(',');
@@ -627,7 +627,7 @@ void PrintAbsyn::visitListExpr(ListExpr *listexpr)
 
 void PrintAbsyn::visitAddOp(AddOp*p) {} //abstract class
 
-void PrintAbsyn::visitOpPlus(OpPlus* p)
+void PrintAbsyn::visitOPlus(OPlus* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -639,7 +639,7 @@ void PrintAbsyn::visitOpPlus(OpPlus* p)
   _i_ = oldi;
 }
 
-void PrintAbsyn::visitOpMinus(OpMinus* p)
+void PrintAbsyn::visitOMinus(OMinus* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -653,7 +653,7 @@ void PrintAbsyn::visitOpMinus(OpMinus* p)
 
 void PrintAbsyn::visitMulOp(MulOp*p) {} //abstract class
 
-void PrintAbsyn::visitOpTimes(OpTimes* p)
+void PrintAbsyn::visitOTimes(OTimes* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -665,7 +665,7 @@ void PrintAbsyn::visitOpTimes(OpTimes* p)
   _i_ = oldi;
 }
 
-void PrintAbsyn::visitOpDiv(OpDiv* p)
+void PrintAbsyn::visitODiv(ODiv* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -677,7 +677,7 @@ void PrintAbsyn::visitOpDiv(OpDiv* p)
   _i_ = oldi;
 }
 
-void PrintAbsyn::visitOpMod(OpMod* p)
+void PrintAbsyn::visitOMod(OMod* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -691,7 +691,7 @@ void PrintAbsyn::visitOpMod(OpMod* p)
 
 void PrintAbsyn::visitRelOp(RelOp*p) {} //abstract class
 
-void PrintAbsyn::visitOpLTH(OpLTH* p)
+void PrintAbsyn::visitOLTH(OLTH* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -703,7 +703,7 @@ void PrintAbsyn::visitOpLTH(OpLTH* p)
   _i_ = oldi;
 }
 
-void PrintAbsyn::visitOpLE(OpLE* p)
+void PrintAbsyn::visitOLE(OLE* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -715,7 +715,7 @@ void PrintAbsyn::visitOpLE(OpLE* p)
   _i_ = oldi;
 }
 
-void PrintAbsyn::visitOpGTH(OpGTH* p)
+void PrintAbsyn::visitOGTH(OGTH* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -727,7 +727,7 @@ void PrintAbsyn::visitOpGTH(OpGTH* p)
   _i_ = oldi;
 }
 
-void PrintAbsyn::visitOpGE(OpGE* p)
+void PrintAbsyn::visitOGE(OGE* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -739,7 +739,7 @@ void PrintAbsyn::visitOpGE(OpGE* p)
   _i_ = oldi;
 }
 
-void PrintAbsyn::visitOpEQU(OpEQU* p)
+void PrintAbsyn::visitOEQU(OEQU* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -751,7 +751,7 @@ void PrintAbsyn::visitOpEQU(OpEQU* p)
   _i_ = oldi;
 }
 
-void PrintAbsyn::visitOpNE(OpNE* p)
+void PrintAbsyn::visitONE(ONE* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -812,10 +812,10 @@ char* ShowAbsyn::show(Visitable *v)
 }
 void ShowAbsyn::visitProgram(Program* p) {} //abstract class
 
-void ShowAbsyn::visitTProgram(TProgram* p)
+void ShowAbsyn::visitCProgram(CProgram* p)
 {
   bufAppend('(');
-  bufAppend("TProgram");
+  bufAppend("CProgram");
   bufAppend(' ');
   bufAppend('[');
   if (p->listtopdef_)  p->listtopdef_->accept(this);
@@ -824,10 +824,10 @@ void ShowAbsyn::visitTProgram(TProgram* p)
 }
 void ShowAbsyn::visitTopDef(TopDef* p) {} //abstract class
 
-void ShowAbsyn::visitTFnDef(TFnDef* p)
+void ShowAbsyn::visitCFnDef(CFnDef* p)
 {
   bufAppend('(');
-  bufAppend("TFnDef");
+  bufAppend("CFnDef");
   bufAppend(' ');
   bufAppend('[');
   if (p->type_)  p->type_->accept(this);
@@ -846,7 +846,7 @@ void ShowAbsyn::visitTFnDef(TFnDef* p)
 }
 void ShowAbsyn::visitListTopDef(ListTopDef *listtopdef)
 {
-  for (ListTopDef::const_iterator i = listtopdef->begin() ; i != listtopdef->end() ; ++i)
+  for (std::vector<TopDef*>::const_iterator i = listtopdef->begin() ; i != listtopdef->end() ; ++i)
   {
     (*i)->accept(this);
     if (i != listtopdef->end() - 1) bufAppend(", ");
@@ -855,10 +855,10 @@ void ShowAbsyn::visitListTopDef(ListTopDef *listtopdef)
 
 void ShowAbsyn::visitArg(Arg* p) {} //abstract class
 
-void ShowAbsyn::visitTArg(TArg* p)
+void ShowAbsyn::visitCArg(CArg* p)
 {
   bufAppend('(');
-  bufAppend("TArg");
+  bufAppend("CArg");
   bufAppend(' ');
   bufAppend('[');
   if (p->type_)  p->type_->accept(this);
@@ -869,7 +869,7 @@ void ShowAbsyn::visitTArg(TArg* p)
 }
 void ShowAbsyn::visitListArg(ListArg *listarg)
 {
-  for (ListArg::const_iterator i = listarg->begin() ; i != listarg->end() ; ++i)
+  for (std::vector<Arg*>::const_iterator i = listarg->begin() ; i != listarg->end() ; ++i)
   {
     (*i)->accept(this);
     if (i != listarg->end() - 1) bufAppend(", ");
@@ -878,10 +878,10 @@ void ShowAbsyn::visitListArg(ListArg *listarg)
 
 void ShowAbsyn::visitBlock(Block* p) {} //abstract class
 
-void ShowAbsyn::visitTBlock(TBlock* p)
+void ShowAbsyn::visitSBlock(SBlock* p)
 {
   bufAppend('(');
-  bufAppend("TBlock");
+  bufAppend("SBlock");
   bufAppend(' ');
   bufAppend('[');
   if (p->liststmt_)  p->liststmt_->accept(this);
@@ -891,7 +891,7 @@ void ShowAbsyn::visitTBlock(TBlock* p)
 }
 void ShowAbsyn::visitListStmt(ListStmt *liststmt)
 {
-  for (ListStmt::const_iterator i = liststmt->begin() ; i != liststmt->end() ; ++i)
+  for (std::vector<Stmt*>::const_iterator i = liststmt->begin() ; i != liststmt->end() ; ++i)
   {
     (*i)->accept(this);
     if (i != liststmt->end() - 1) bufAppend(", ");
@@ -900,24 +900,24 @@ void ShowAbsyn::visitListStmt(ListStmt *liststmt)
 
 void ShowAbsyn::visitStmt(Stmt* p) {} //abstract class
 
-void ShowAbsyn::visitEmpty(Empty* p)
+void ShowAbsyn::visitSEmpty(SEmpty* p)
 {
-  bufAppend("Empty");
+  bufAppend("SEmpty");
 }
-void ShowAbsyn::visitBStmt(BStmt* p)
+void ShowAbsyn::visitSBStmt(SBStmt* p)
 {
   bufAppend('(');
-  bufAppend("BStmt");
+  bufAppend("SBStmt");
   bufAppend(' ');
   bufAppend('[');
   if (p->block_)  p->block_->accept(this);
   bufAppend(']');
   bufAppend(')');
 }
-void ShowAbsyn::visitDecl(Decl* p)
+void ShowAbsyn::visitSDecl(SDecl* p)
 {
   bufAppend('(');
-  bufAppend("Decl");
+  bufAppend("SDecl");
   bufAppend(' ');
   bufAppend('[');
   if (p->type_)  p->type_->accept(this);
@@ -929,10 +929,10 @@ void ShowAbsyn::visitDecl(Decl* p)
   bufAppend(' ');
   bufAppend(')');
 }
-void ShowAbsyn::visitAss(Ass* p)
+void ShowAbsyn::visitSAss(SAss* p)
 {
   bufAppend('(');
-  bufAppend("Ass");
+  bufAppend("SAss");
   bufAppend(' ');
   visitIdent(p->ident_);
   bufAppend(' ');
@@ -942,28 +942,28 @@ void ShowAbsyn::visitAss(Ass* p)
   bufAppend(' ');
   bufAppend(')');
 }
-void ShowAbsyn::visitIncr(Incr* p)
+void ShowAbsyn::visitSIncr(SIncr* p)
 {
   bufAppend('(');
-  bufAppend("Incr");
+  bufAppend("SIncr");
   bufAppend(' ');
   visitIdent(p->ident_);
   bufAppend(' ');
   bufAppend(')');
 }
-void ShowAbsyn::visitDecr(Decr* p)
+void ShowAbsyn::visitSDecr(SDecr* p)
 {
   bufAppend('(');
-  bufAppend("Decr");
+  bufAppend("SDecr");
   bufAppend(' ');
   visitIdent(p->ident_);
   bufAppend(' ');
   bufAppend(')');
 }
-void ShowAbsyn::visitRet(Ret* p)
+void ShowAbsyn::visitSRet(SRet* p)
 {
   bufAppend('(');
-  bufAppend("Ret");
+  bufAppend("SRet");
   bufAppend(' ');
   bufAppend('[');
   if (p->expr_)  p->expr_->accept(this);
@@ -971,14 +971,14 @@ void ShowAbsyn::visitRet(Ret* p)
   bufAppend(' ');
   bufAppend(')');
 }
-void ShowAbsyn::visitVRet(VRet* p)
+void ShowAbsyn::visitSVRet(SVRet* p)
 {
-  bufAppend("VRet");
+  bufAppend("SVRet");
 }
-void ShowAbsyn::visitCond(Cond* p)
+void ShowAbsyn::visitSCond(SCond* p)
 {
   bufAppend('(');
-  bufAppend("Cond");
+  bufAppend("SCond");
   bufAppend(' ');
   bufAppend('[');
   if (p->expr_)  p->expr_->accept(this);
@@ -989,10 +989,10 @@ void ShowAbsyn::visitCond(Cond* p)
   bufAppend(']');
   bufAppend(')');
 }
-void ShowAbsyn::visitCondElse(CondElse* p)
+void ShowAbsyn::visitSCondElse(SCondElse* p)
 {
   bufAppend('(');
-  bufAppend("CondElse");
+  bufAppend("SCondElse");
   bufAppend(' ');
   bufAppend('[');
   if (p->expr_)  p->expr_->accept(this);
@@ -1003,10 +1003,10 @@ void ShowAbsyn::visitCondElse(CondElse* p)
   p->stmt_2->accept(this);
   bufAppend(')');
 }
-void ShowAbsyn::visitWhile(While* p)
+void ShowAbsyn::visitSWhile(SWhile* p)
 {
   bufAppend('(');
-  bufAppend("While");
+  bufAppend("SWhile");
   bufAppend(' ');
   bufAppend('[');
   if (p->expr_)  p->expr_->accept(this);
@@ -1030,18 +1030,18 @@ void ShowAbsyn::visitSExp(SExp* p)
 }
 void ShowAbsyn::visitItem(Item* p) {} //abstract class
 
-void ShowAbsyn::visitNoInit(NoInit* p)
+void ShowAbsyn::visitSNoInit(SNoInit* p)
 {
   bufAppend('(');
-  bufAppend("NoInit");
+  bufAppend("SNoInit");
   bufAppend(' ');
   visitIdent(p->ident_);
   bufAppend(')');
 }
-void ShowAbsyn::visitInit(Init* p)
+void ShowAbsyn::visitSInit(SInit* p)
 {
   bufAppend('(');
-  bufAppend("Init");
+  bufAppend("SInit");
   bufAppend(' ');
   visitIdent(p->ident_);
   bufAppend(' ');
@@ -1052,7 +1052,7 @@ void ShowAbsyn::visitInit(Init* p)
 }
 void ShowAbsyn::visitListItem(ListItem *listitem)
 {
-  for (ListItem::const_iterator i = listitem->begin() ; i != listitem->end() ; ++i)
+  for (std::vector<Item*>::const_iterator i = listitem->begin() ; i != listitem->end() ; ++i)
   {
     (*i)->accept(this);
     if (i != listitem->end() - 1) bufAppend(", ");
@@ -1208,7 +1208,7 @@ void ShowAbsyn::visitEOr(EOr* p)
 }
 void ShowAbsyn::visitListExpr(ListExpr *listexpr)
 {
-  for (ListExpr::const_iterator i = listexpr->begin() ; i != listexpr->end() ; ++i)
+  for (std::vector<Expr*>::const_iterator i = listexpr->begin() ; i != listexpr->end() ; ++i)
   {
     (*i)->accept(this);
     if (i != listexpr->end() - 1) bufAppend(", ");
@@ -1217,53 +1217,53 @@ void ShowAbsyn::visitListExpr(ListExpr *listexpr)
 
 void ShowAbsyn::visitAddOp(AddOp* p) {} //abstract class
 
-void ShowAbsyn::visitOpPlus(OpPlus* p)
+void ShowAbsyn::visitOPlus(OPlus* p)
 {
-  bufAppend("OpPlus");
+  bufAppend("OPlus");
 }
-void ShowAbsyn::visitOpMinus(OpMinus* p)
+void ShowAbsyn::visitOMinus(OMinus* p)
 {
-  bufAppend("OpMinus");
+  bufAppend("OMinus");
 }
 void ShowAbsyn::visitMulOp(MulOp* p) {} //abstract class
 
-void ShowAbsyn::visitOpTimes(OpTimes* p)
+void ShowAbsyn::visitOTimes(OTimes* p)
 {
-  bufAppend("OpTimes");
+  bufAppend("OTimes");
 }
-void ShowAbsyn::visitOpDiv(OpDiv* p)
+void ShowAbsyn::visitODiv(ODiv* p)
 {
-  bufAppend("OpDiv");
+  bufAppend("ODiv");
 }
-void ShowAbsyn::visitOpMod(OpMod* p)
+void ShowAbsyn::visitOMod(OMod* p)
 {
-  bufAppend("OpMod");
+  bufAppend("OMod");
 }
 void ShowAbsyn::visitRelOp(RelOp* p) {} //abstract class
 
-void ShowAbsyn::visitOpLTH(OpLTH* p)
+void ShowAbsyn::visitOLTH(OLTH* p)
 {
-  bufAppend("OpLTH");
+  bufAppend("OLTH");
 }
-void ShowAbsyn::visitOpLE(OpLE* p)
+void ShowAbsyn::visitOLE(OLE* p)
 {
-  bufAppend("OpLE");
+  bufAppend("OLE");
 }
-void ShowAbsyn::visitOpGTH(OpGTH* p)
+void ShowAbsyn::visitOGTH(OGTH* p)
 {
-  bufAppend("OpGTH");
+  bufAppend("OGTH");
 }
-void ShowAbsyn::visitOpGE(OpGE* p)
+void ShowAbsyn::visitOGE(OGE* p)
 {
-  bufAppend("OpGE");
+  bufAppend("OGE");
 }
-void ShowAbsyn::visitOpEQU(OpEQU* p)
+void ShowAbsyn::visitOEQU(OEQU* p)
 {
-  bufAppend("OpEQU");
+  bufAppend("OEQU");
 }
-void ShowAbsyn::visitOpNE(OpNE* p)
+void ShowAbsyn::visitONE(ONE* p)
 {
-  bufAppend("OpNE");
+  bufAppend("ONE");
 }
 void ShowAbsyn::visitInteger(Integer i)
 {

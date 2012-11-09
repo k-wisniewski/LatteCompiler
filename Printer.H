@@ -29,32 +29,32 @@ class PrintAbsyn : public Visitor
   char* print(Visitable* v);
 
   void visitProgram(Program *p); /* abstract class */
-  void visitTProgram(TProgram *p);
+  void visitCProgram(CProgram *p);
   void visitTopDef(TopDef *p); /* abstract class */
-  void visitTFnDef(TFnDef *p);
+  void visitCFnDef(CFnDef *p);
   void visitListTopDef(ListTopDef* p);
   void visitArg(Arg *p); /* abstract class */
-  void visitTArg(TArg *p);
+  void visitCArg(CArg *p);
   void visitListArg(ListArg* p);
   void visitBlock(Block *p); /* abstract class */
-  void visitTBlock(TBlock *p);
+  void visitSBlock(SBlock *p);
   void visitListStmt(ListStmt* p);
   void visitStmt(Stmt *p); /* abstract class */
-  void visitEmpty(Empty *p);
-  void visitBStmt(BStmt *p);
-  void visitDecl(Decl *p);
-  void visitAss(Ass *p);
-  void visitIncr(Incr *p);
-  void visitDecr(Decr *p);
-  void visitRet(Ret *p);
-  void visitVRet(VRet *p);
-  void visitCond(Cond *p);
-  void visitCondElse(CondElse *p);
-  void visitWhile(While *p);
+  void visitSEmpty(SEmpty *p);
+  void visitSBStmt(SBStmt *p);
+  void visitSDecl(SDecl *p);
+  void visitSAss(SAss *p);
+  void visitSIncr(SIncr *p);
+  void visitSDecr(SDecr *p);
+  void visitSRet(SRet *p);
+  void visitSVRet(SVRet *p);
+  void visitSCond(SCond *p);
+  void visitSCondElse(SCondElse *p);
+  void visitSWhile(SWhile *p);
   void visitSExp(SExp *p);
   void visitItem(Item *p); /* abstract class */
-  void visitNoInit(NoInit *p);
-  void visitInit(Init *p);
+  void visitSNoInit(SNoInit *p);
+  void visitSInit(SInit *p);
   void visitListItem(ListItem* p);
   void visitType(Type *p); /* abstract class */
   void visitTInt(TInt *p);
@@ -77,19 +77,19 @@ class PrintAbsyn : public Visitor
   void visitEOr(EOr *p);
   void visitListExpr(ListExpr* p);
   void visitAddOp(AddOp *p); /* abstract class */
-  void visitOpPlus(OpPlus *p);
-  void visitOpMinus(OpMinus *p);
+  void visitOPlus(OPlus *p);
+  void visitOMinus(OMinus *p);
   void visitMulOp(MulOp *p); /* abstract class */
-  void visitOpTimes(OpTimes *p);
-  void visitOpDiv(OpDiv *p);
-  void visitOpMod(OpMod *p);
+  void visitOTimes(OTimes *p);
+  void visitODiv(ODiv *p);
+  void visitOMod(OMod *p);
   void visitRelOp(RelOp *p); /* abstract class */
-  void visitOpLTH(OpLTH *p);
-  void visitOpLE(OpLE *p);
-  void visitOpGTH(OpGTH *p);
-  void visitOpGE(OpGE *p);
-  void visitOpEQU(OpEQU *p);
-  void visitOpNE(OpNE *p);
+  void visitOLTH(OLTH *p);
+  void visitOLE(OLE *p);
+  void visitOGTH(OGTH *p);
+  void visitOGE(OGE *p);
+  void visitOEQU(OEQU *p);
+  void visitONE(ONE *p);
 
   void visitInteger(Integer i);
   void visitDouble(Double d);
@@ -159,32 +159,32 @@ class ShowAbsyn : public Visitor
   char* show(Visitable* v);
 
   void visitProgram(Program *p); /* abstract class */
-  void visitTProgram(TProgram *p);
+  void visitCProgram(CProgram *p);
   void visitTopDef(TopDef *p); /* abstract class */
-  void visitTFnDef(TFnDef *p);
+  void visitCFnDef(CFnDef *p);
   void visitListTopDef(ListTopDef* p);
   void visitArg(Arg *p); /* abstract class */
-  void visitTArg(TArg *p);
+  void visitCArg(CArg *p);
   void visitListArg(ListArg* p);
   void visitBlock(Block *p); /* abstract class */
-  void visitTBlock(TBlock *p);
+  void visitSBlock(SBlock *p);
   void visitListStmt(ListStmt* p);
   void visitStmt(Stmt *p); /* abstract class */
-  void visitEmpty(Empty *p);
-  void visitBStmt(BStmt *p);
-  void visitDecl(Decl *p);
-  void visitAss(Ass *p);
-  void visitIncr(Incr *p);
-  void visitDecr(Decr *p);
-  void visitRet(Ret *p);
-  void visitVRet(VRet *p);
-  void visitCond(Cond *p);
-  void visitCondElse(CondElse *p);
-  void visitWhile(While *p);
+  void visitSEmpty(SEmpty *p);
+  void visitSBStmt(SBStmt *p);
+  void visitSDecl(SDecl *p);
+  void visitSAss(SAss *p);
+  void visitSIncr(SIncr *p);
+  void visitSDecr(SDecr *p);
+  void visitSRet(SRet *p);
+  void visitSVRet(SVRet *p);
+  void visitSCond(SCond *p);
+  void visitSCondElse(SCondElse *p);
+  void visitSWhile(SWhile *p);
   void visitSExp(SExp *p);
   void visitItem(Item *p); /* abstract class */
-  void visitNoInit(NoInit *p);
-  void visitInit(Init *p);
+  void visitSNoInit(SNoInit *p);
+  void visitSInit(SInit *p);
   void visitListItem(ListItem* p);
   void visitType(Type *p); /* abstract class */
   void visitTInt(TInt *p);
@@ -207,19 +207,19 @@ class ShowAbsyn : public Visitor
   void visitEOr(EOr *p);
   void visitListExpr(ListExpr* p);
   void visitAddOp(AddOp *p); /* abstract class */
-  void visitOpPlus(OpPlus *p);
-  void visitOpMinus(OpMinus *p);
+  void visitOPlus(OPlus *p);
+  void visitOMinus(OMinus *p);
   void visitMulOp(MulOp *p); /* abstract class */
-  void visitOpTimes(OpTimes *p);
-  void visitOpDiv(OpDiv *p);
-  void visitOpMod(OpMod *p);
+  void visitOTimes(OTimes *p);
+  void visitODiv(ODiv *p);
+  void visitOMod(OMod *p);
   void visitRelOp(RelOp *p); /* abstract class */
-  void visitOpLTH(OpLTH *p);
-  void visitOpLE(OpLE *p);
-  void visitOpGTH(OpGTH *p);
-  void visitOpGE(OpGE *p);
-  void visitOpEQU(OpEQU *p);
-  void visitOpNE(OpNE *p);
+  void visitOLTH(OLTH *p);
+  void visitOLE(OLE *p);
+  void visitOGTH(OGTH *p);
+  void visitOGE(OGE *p);
+  void visitOEQU(OEQU *p);
+  void visitONE(ONE *p);
 
   void visitInteger(Integer i);
   void visitDouble(Double d);

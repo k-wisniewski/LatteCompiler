@@ -5,52 +5,52 @@
 #include <vector>
 #include "Absyn.H"
 
-/********************   TProgram    ********************/
-TProgram::TProgram(ListTopDef *p1)
+/********************   CProgram    ********************/
+CProgram::CProgram(ListTopDef *p1)
 {
   listtopdef_ = p1;
 
 }
 
-TProgram::TProgram(const TProgram & other)
+CProgram::CProgram(const CProgram & other)
 {
   listtopdef_ = other.listtopdef_->clone();
 
 }
 
-TProgram &TProgram::operator=(const TProgram & other)
+CProgram &CProgram::operator=(const CProgram & other)
 {
-  TProgram tmp(other);
+  CProgram tmp(other);
   swap(tmp);
   return *this;
 }
 
-void TProgram::swap(TProgram & other)
+void CProgram::swap(CProgram & other)
 {
   std::swap(listtopdef_, other.listtopdef_);
 
 }
 
-TProgram::~TProgram()
+CProgram::~CProgram()
 {
   delete(listtopdef_);
 
 }
 
-void TProgram::accept(Visitor *v)
+void CProgram::accept(Visitor *v)
 {
-  v->visitTProgram(this);
+  v->visitCProgram(this);
 }
 
-TProgram *TProgram::clone() const
+CProgram *CProgram::clone() const
 {
-  return new TProgram(*this);
+  return new CProgram(*this);
 }
 
 
 
-/********************   TFnDef    ********************/
-TFnDef::TFnDef(Type *p1, Ident p2, ListArg *p3, Block *p4)
+/********************   CFnDef    ********************/
+CFnDef::CFnDef(Type *p1, Ident p2, ListArg *p3, Block *p4)
 {
   type_ = p1;
   ident_ = p2;
@@ -59,7 +59,7 @@ TFnDef::TFnDef(Type *p1, Ident p2, ListArg *p3, Block *p4)
 
 }
 
-TFnDef::TFnDef(const TFnDef & other)
+CFnDef::CFnDef(const CFnDef & other)
 {
   type_ = other.type_->clone();
   ident_ = other.ident_;
@@ -68,14 +68,14 @@ TFnDef::TFnDef(const TFnDef & other)
 
 }
 
-TFnDef &TFnDef::operator=(const TFnDef & other)
+CFnDef &CFnDef::operator=(const CFnDef & other)
 {
-  TFnDef tmp(other);
+  CFnDef tmp(other);
   swap(tmp);
   return *this;
 }
 
-void TFnDef::swap(TFnDef & other)
+void CFnDef::swap(CFnDef & other)
 {
   std::swap(type_, other.type_);
   std::swap(ident_, other.ident_);
@@ -84,7 +84,7 @@ void TFnDef::swap(TFnDef & other)
 
 }
 
-TFnDef::~TFnDef()
+CFnDef::~CFnDef()
 {
   delete(type_);
   delete(listarg_);
@@ -92,508 +92,508 @@ TFnDef::~TFnDef()
 
 }
 
-void TFnDef::accept(Visitor *v)
+void CFnDef::accept(Visitor *v)
 {
-  v->visitTFnDef(this);
+  v->visitCFnDef(this);
 }
 
-TFnDef *TFnDef::clone() const
+CFnDef *CFnDef::clone() const
 {
-  return new TFnDef(*this);
+  return new CFnDef(*this);
 }
 
 
 
-/********************   TArg    ********************/
-TArg::TArg(Type *p1, Ident p2)
+/********************   CArg    ********************/
+CArg::CArg(Type *p1, Ident p2)
 {
   type_ = p1;
   ident_ = p2;
 
 }
 
-TArg::TArg(const TArg & other)
+CArg::CArg(const CArg & other)
 {
   type_ = other.type_->clone();
   ident_ = other.ident_;
 
 }
 
-TArg &TArg::operator=(const TArg & other)
+CArg &CArg::operator=(const CArg & other)
 {
-  TArg tmp(other);
+  CArg tmp(other);
   swap(tmp);
   return *this;
 }
 
-void TArg::swap(TArg & other)
+void CArg::swap(CArg & other)
 {
   std::swap(type_, other.type_);
   std::swap(ident_, other.ident_);
 
 }
 
-TArg::~TArg()
+CArg::~CArg()
 {
   delete(type_);
 
 }
 
-void TArg::accept(Visitor *v)
+void CArg::accept(Visitor *v)
 {
-  v->visitTArg(this);
+  v->visitCArg(this);
 }
 
-TArg *TArg::clone() const
+CArg *CArg::clone() const
 {
-  return new TArg(*this);
+  return new CArg(*this);
 }
 
 
 
-/********************   TBlock    ********************/
-TBlock::TBlock(ListStmt *p1)
+/********************   SBlock    ********************/
+SBlock::SBlock(ListStmt *p1)
 {
   liststmt_ = p1;
 
 }
 
-TBlock::TBlock(const TBlock & other)
+SBlock::SBlock(const SBlock & other)
 {
   liststmt_ = other.liststmt_->clone();
 
 }
 
-TBlock &TBlock::operator=(const TBlock & other)
+SBlock &SBlock::operator=(const SBlock & other)
 {
-  TBlock tmp(other);
+  SBlock tmp(other);
   swap(tmp);
   return *this;
 }
 
-void TBlock::swap(TBlock & other)
+void SBlock::swap(SBlock & other)
 {
   std::swap(liststmt_, other.liststmt_);
 
 }
 
-TBlock::~TBlock()
+SBlock::~SBlock()
 {
   delete(liststmt_);
 
 }
 
-void TBlock::accept(Visitor *v)
+void SBlock::accept(Visitor *v)
 {
-  v->visitTBlock(this);
+  v->visitSBlock(this);
 }
 
-TBlock *TBlock::clone() const
+SBlock *SBlock::clone() const
 {
-  return new TBlock(*this);
+  return new SBlock(*this);
 }
 
 
 
-/********************   Empty    ********************/
-Empty::Empty()
-{
-
-}
-
-Empty::Empty(const Empty & other)
+/********************   SEmpty    ********************/
+SEmpty::SEmpty()
 {
 
 }
 
-Empty &Empty::operator=(const Empty & other)
+SEmpty::SEmpty(const SEmpty & other)
 {
-  Empty tmp(other);
+
+}
+
+SEmpty &SEmpty::operator=(const SEmpty & other)
+{
+  SEmpty tmp(other);
   swap(tmp);
   return *this;
 }
 
-void Empty::swap(Empty & other)
+void SEmpty::swap(SEmpty & other)
 {
 
 }
 
-Empty::~Empty()
+SEmpty::~SEmpty()
 {
 
 }
 
-void Empty::accept(Visitor *v)
+void SEmpty::accept(Visitor *v)
 {
-  v->visitEmpty(this);
+  v->visitSEmpty(this);
 }
 
-Empty *Empty::clone() const
+SEmpty *SEmpty::clone() const
 {
-  return new Empty(*this);
+  return new SEmpty(*this);
 }
 
 
 
-/********************   BStmt    ********************/
-BStmt::BStmt(Block *p1)
+/********************   SBStmt    ********************/
+SBStmt::SBStmt(Block *p1)
 {
   block_ = p1;
 
 }
 
-BStmt::BStmt(const BStmt & other)
+SBStmt::SBStmt(const SBStmt & other)
 {
   block_ = other.block_->clone();
 
 }
 
-BStmt &BStmt::operator=(const BStmt & other)
+SBStmt &SBStmt::operator=(const SBStmt & other)
 {
-  BStmt tmp(other);
+  SBStmt tmp(other);
   swap(tmp);
   return *this;
 }
 
-void BStmt::swap(BStmt & other)
+void SBStmt::swap(SBStmt & other)
 {
   std::swap(block_, other.block_);
 
 }
 
-BStmt::~BStmt()
+SBStmt::~SBStmt()
 {
   delete(block_);
 
 }
 
-void BStmt::accept(Visitor *v)
+void SBStmt::accept(Visitor *v)
 {
-  v->visitBStmt(this);
+  v->visitSBStmt(this);
 }
 
-BStmt *BStmt::clone() const
+SBStmt *SBStmt::clone() const
 {
-  return new BStmt(*this);
+  return new SBStmt(*this);
 }
 
 
 
-/********************   Decl    ********************/
-Decl::Decl(Type *p1, ListItem *p2)
+/********************   SDecl    ********************/
+SDecl::SDecl(Type *p1, ListItem *p2)
 {
   type_ = p1;
   listitem_ = p2;
 
 }
 
-Decl::Decl(const Decl & other)
+SDecl::SDecl(const SDecl & other)
 {
   type_ = other.type_->clone();
   listitem_ = other.listitem_->clone();
 
 }
 
-Decl &Decl::operator=(const Decl & other)
+SDecl &SDecl::operator=(const SDecl & other)
 {
-  Decl tmp(other);
+  SDecl tmp(other);
   swap(tmp);
   return *this;
 }
 
-void Decl::swap(Decl & other)
+void SDecl::swap(SDecl & other)
 {
   std::swap(type_, other.type_);
   std::swap(listitem_, other.listitem_);
 
 }
 
-Decl::~Decl()
+SDecl::~SDecl()
 {
   delete(type_);
   delete(listitem_);
 
 }
 
-void Decl::accept(Visitor *v)
+void SDecl::accept(Visitor *v)
 {
-  v->visitDecl(this);
+  v->visitSDecl(this);
 }
 
-Decl *Decl::clone() const
+SDecl *SDecl::clone() const
 {
-  return new Decl(*this);
+  return new SDecl(*this);
 }
 
 
 
-/********************   Ass    ********************/
-Ass::Ass(Ident p1, Expr *p2)
+/********************   SAss    ********************/
+SAss::SAss(Ident p1, Expr *p2)
 {
   ident_ = p1;
   expr_ = p2;
 
 }
 
-Ass::Ass(const Ass & other)
+SAss::SAss(const SAss & other)
 {
   ident_ = other.ident_;
   expr_ = other.expr_->clone();
 
 }
 
-Ass &Ass::operator=(const Ass & other)
+SAss &SAss::operator=(const SAss & other)
 {
-  Ass tmp(other);
+  SAss tmp(other);
   swap(tmp);
   return *this;
 }
 
-void Ass::swap(Ass & other)
+void SAss::swap(SAss & other)
 {
   std::swap(ident_, other.ident_);
   std::swap(expr_, other.expr_);
 
 }
 
-Ass::~Ass()
+SAss::~SAss()
 {
   delete(expr_);
 
 }
 
-void Ass::accept(Visitor *v)
+void SAss::accept(Visitor *v)
 {
-  v->visitAss(this);
+  v->visitSAss(this);
 }
 
-Ass *Ass::clone() const
+SAss *SAss::clone() const
 {
-  return new Ass(*this);
-}
-
-
-
-/********************   Incr    ********************/
-Incr::Incr(Ident p1)
-{
-  ident_ = p1;
-
-}
-
-Incr::Incr(const Incr & other)
-{
-  ident_ = other.ident_;
-
-}
-
-Incr &Incr::operator=(const Incr & other)
-{
-  Incr tmp(other);
-  swap(tmp);
-  return *this;
-}
-
-void Incr::swap(Incr & other)
-{
-  std::swap(ident_, other.ident_);
-
-}
-
-Incr::~Incr()
-{
-
-}
-
-void Incr::accept(Visitor *v)
-{
-  v->visitIncr(this);
-}
-
-Incr *Incr::clone() const
-{
-  return new Incr(*this);
+  return new SAss(*this);
 }
 
 
 
-/********************   Decr    ********************/
-Decr::Decr(Ident p1)
+/********************   SIncr    ********************/
+SIncr::SIncr(Ident p1)
 {
   ident_ = p1;
 
 }
 
-Decr::Decr(const Decr & other)
+SIncr::SIncr(const SIncr & other)
 {
   ident_ = other.ident_;
 
 }
 
-Decr &Decr::operator=(const Decr & other)
+SIncr &SIncr::operator=(const SIncr & other)
 {
-  Decr tmp(other);
+  SIncr tmp(other);
   swap(tmp);
   return *this;
 }
 
-void Decr::swap(Decr & other)
+void SIncr::swap(SIncr & other)
 {
   std::swap(ident_, other.ident_);
 
 }
 
-Decr::~Decr()
+SIncr::~SIncr()
 {
 
 }
 
-void Decr::accept(Visitor *v)
+void SIncr::accept(Visitor *v)
 {
-  v->visitDecr(this);
+  v->visitSIncr(this);
 }
 
-Decr *Decr::clone() const
+SIncr *SIncr::clone() const
 {
-  return new Decr(*this);
+  return new SIncr(*this);
 }
 
 
 
-/********************   Ret    ********************/
-Ret::Ret(Expr *p1)
+/********************   SDecr    ********************/
+SDecr::SDecr(Ident p1)
+{
+  ident_ = p1;
+
+}
+
+SDecr::SDecr(const SDecr & other)
+{
+  ident_ = other.ident_;
+
+}
+
+SDecr &SDecr::operator=(const SDecr & other)
+{
+  SDecr tmp(other);
+  swap(tmp);
+  return *this;
+}
+
+void SDecr::swap(SDecr & other)
+{
+  std::swap(ident_, other.ident_);
+
+}
+
+SDecr::~SDecr()
+{
+
+}
+
+void SDecr::accept(Visitor *v)
+{
+  v->visitSDecr(this);
+}
+
+SDecr *SDecr::clone() const
+{
+  return new SDecr(*this);
+}
+
+
+
+/********************   SRet    ********************/
+SRet::SRet(Expr *p1)
 {
   expr_ = p1;
 
 }
 
-Ret::Ret(const Ret & other)
+SRet::SRet(const SRet & other)
 {
   expr_ = other.expr_->clone();
 
 }
 
-Ret &Ret::operator=(const Ret & other)
+SRet &SRet::operator=(const SRet & other)
 {
-  Ret tmp(other);
+  SRet tmp(other);
   swap(tmp);
   return *this;
 }
 
-void Ret::swap(Ret & other)
+void SRet::swap(SRet & other)
 {
   std::swap(expr_, other.expr_);
 
 }
 
-Ret::~Ret()
+SRet::~SRet()
 {
   delete(expr_);
 
 }
 
-void Ret::accept(Visitor *v)
+void SRet::accept(Visitor *v)
 {
-  v->visitRet(this);
+  v->visitSRet(this);
 }
 
-Ret *Ret::clone() const
+SRet *SRet::clone() const
 {
-  return new Ret(*this);
+  return new SRet(*this);
 }
 
 
 
-/********************   VRet    ********************/
-VRet::VRet()
-{
-
-}
-
-VRet::VRet(const VRet & other)
+/********************   SVRet    ********************/
+SVRet::SVRet()
 {
 
 }
 
-VRet &VRet::operator=(const VRet & other)
+SVRet::SVRet(const SVRet & other)
 {
-  VRet tmp(other);
+
+}
+
+SVRet &SVRet::operator=(const SVRet & other)
+{
+  SVRet tmp(other);
   swap(tmp);
   return *this;
 }
 
-void VRet::swap(VRet & other)
+void SVRet::swap(SVRet & other)
 {
 
 }
 
-VRet::~VRet()
+SVRet::~SVRet()
 {
 
 }
 
-void VRet::accept(Visitor *v)
+void SVRet::accept(Visitor *v)
 {
-  v->visitVRet(this);
+  v->visitSVRet(this);
 }
 
-VRet *VRet::clone() const
+SVRet *SVRet::clone() const
 {
-  return new VRet(*this);
+  return new SVRet(*this);
 }
 
 
 
-/********************   Cond    ********************/
-Cond::Cond(Expr *p1, Stmt *p2)
+/********************   SCond    ********************/
+SCond::SCond(Expr *p1, Stmt *p2)
 {
   expr_ = p1;
   stmt_ = p2;
 
 }
 
-Cond::Cond(const Cond & other)
+SCond::SCond(const SCond & other)
 {
   expr_ = other.expr_->clone();
   stmt_ = other.stmt_->clone();
 
 }
 
-Cond &Cond::operator=(const Cond & other)
+SCond &SCond::operator=(const SCond & other)
 {
-  Cond tmp(other);
+  SCond tmp(other);
   swap(tmp);
   return *this;
 }
 
-void Cond::swap(Cond & other)
+void SCond::swap(SCond & other)
 {
   std::swap(expr_, other.expr_);
   std::swap(stmt_, other.stmt_);
 
 }
 
-Cond::~Cond()
+SCond::~SCond()
 {
   delete(expr_);
   delete(stmt_);
 
 }
 
-void Cond::accept(Visitor *v)
+void SCond::accept(Visitor *v)
 {
-  v->visitCond(this);
+  v->visitSCond(this);
 }
 
-Cond *Cond::clone() const
+SCond *SCond::clone() const
 {
-  return new Cond(*this);
+  return new SCond(*this);
 }
 
 
 
-/********************   CondElse    ********************/
-CondElse::CondElse(Expr *p1, Stmt *p2, Stmt *p3)
+/********************   SCondElse    ********************/
+SCondElse::SCondElse(Expr *p1, Stmt *p2, Stmt *p3)
 {
   expr_ = p1;
   stmt_1 = p2;
@@ -601,7 +601,7 @@ CondElse::CondElse(Expr *p1, Stmt *p2, Stmt *p3)
 
 }
 
-CondElse::CondElse(const CondElse & other)
+SCondElse::SCondElse(const SCondElse & other)
 {
   expr_ = other.expr_->clone();
   stmt_1 = other.stmt_1->clone();
@@ -609,14 +609,14 @@ CondElse::CondElse(const CondElse & other)
 
 }
 
-CondElse &CondElse::operator=(const CondElse & other)
+SCondElse &SCondElse::operator=(const SCondElse & other)
 {
-  CondElse tmp(other);
+  SCondElse tmp(other);
   swap(tmp);
   return *this;
 }
 
-void CondElse::swap(CondElse & other)
+void SCondElse::swap(SCondElse & other)
 {
   std::swap(expr_, other.expr_);
   std::swap(stmt_1, other.stmt_1);
@@ -624,7 +624,7 @@ void CondElse::swap(CondElse & other)
 
 }
 
-CondElse::~CondElse()
+SCondElse::~SCondElse()
 {
   delete(expr_);
   delete(stmt_1);
@@ -632,62 +632,62 @@ CondElse::~CondElse()
 
 }
 
-void CondElse::accept(Visitor *v)
+void SCondElse::accept(Visitor *v)
 {
-  v->visitCondElse(this);
+  v->visitSCondElse(this);
 }
 
-CondElse *CondElse::clone() const
+SCondElse *SCondElse::clone() const
 {
-  return new CondElse(*this);
+  return new SCondElse(*this);
 }
 
 
 
-/********************   While    ********************/
-While::While(Expr *p1, Stmt *p2)
+/********************   SWhile    ********************/
+SWhile::SWhile(Expr *p1, Stmt *p2)
 {
   expr_ = p1;
   stmt_ = p2;
 
 }
 
-While::While(const While & other)
+SWhile::SWhile(const SWhile & other)
 {
   expr_ = other.expr_->clone();
   stmt_ = other.stmt_->clone();
 
 }
 
-While &While::operator=(const While & other)
+SWhile &SWhile::operator=(const SWhile & other)
 {
-  While tmp(other);
+  SWhile tmp(other);
   swap(tmp);
   return *this;
 }
 
-void While::swap(While & other)
+void SWhile::swap(SWhile & other)
 {
   std::swap(expr_, other.expr_);
   std::swap(stmt_, other.stmt_);
 
 }
 
-While::~While()
+SWhile::~SWhile()
 {
   delete(expr_);
   delete(stmt_);
 
 }
 
-void While::accept(Visitor *v)
+void SWhile::accept(Visitor *v)
 {
-  v->visitWhile(this);
+  v->visitSWhile(this);
 }
 
-While *While::clone() const
+SWhile *SWhile::clone() const
 {
-  return new While(*this);
+  return new SWhile(*this);
 }
 
 
@@ -736,92 +736,92 @@ SExp *SExp::clone() const
 
 
 
-/********************   NoInit    ********************/
-NoInit::NoInit(Ident p1)
+/********************   SNoInit    ********************/
+SNoInit::SNoInit(Ident p1)
 {
   ident_ = p1;
 
 }
 
-NoInit::NoInit(const NoInit & other)
+SNoInit::SNoInit(const SNoInit & other)
 {
   ident_ = other.ident_;
 
 }
 
-NoInit &NoInit::operator=(const NoInit & other)
+SNoInit &SNoInit::operator=(const SNoInit & other)
 {
-  NoInit tmp(other);
+  SNoInit tmp(other);
   swap(tmp);
   return *this;
 }
 
-void NoInit::swap(NoInit & other)
+void SNoInit::swap(SNoInit & other)
 {
   std::swap(ident_, other.ident_);
 
 }
 
-NoInit::~NoInit()
+SNoInit::~SNoInit()
 {
 
 }
 
-void NoInit::accept(Visitor *v)
+void SNoInit::accept(Visitor *v)
 {
-  v->visitNoInit(this);
+  v->visitSNoInit(this);
 }
 
-NoInit *NoInit::clone() const
+SNoInit *SNoInit::clone() const
 {
-  return new NoInit(*this);
+  return new SNoInit(*this);
 }
 
 
 
-/********************   Init    ********************/
-Init::Init(Ident p1, Expr *p2)
+/********************   SInit    ********************/
+SInit::SInit(Ident p1, Expr *p2)
 {
   ident_ = p1;
   expr_ = p2;
 
 }
 
-Init::Init(const Init & other)
+SInit::SInit(const SInit & other)
 {
   ident_ = other.ident_;
   expr_ = other.expr_->clone();
 
 }
 
-Init &Init::operator=(const Init & other)
+SInit &SInit::operator=(const SInit & other)
 {
-  Init tmp(other);
+  SInit tmp(other);
   swap(tmp);
   return *this;
 }
 
-void Init::swap(Init & other)
+void SInit::swap(SInit & other)
 {
   std::swap(ident_, other.ident_);
   std::swap(expr_, other.expr_);
 
 }
 
-Init::~Init()
+SInit::~SInit()
 {
   delete(expr_);
 
 }
 
-void Init::accept(Visitor *v)
+void SInit::accept(Visitor *v)
 {
-  v->visitInit(this);
+  v->visitSInit(this);
 }
 
-Init *Init::clone() const
+SInit *SInit::clone() const
 {
-  return new Init(*this);
+  return new SInit(*this);
 }
 
 
@@ -1582,442 +1582,442 @@ EOr *EOr::clone() const
 
 
 
-/********************   OpPlus    ********************/
-OpPlus::OpPlus()
+/********************   OPlus    ********************/
+OPlus::OPlus()
 {
 
 }
 
-OpPlus::OpPlus(const OpPlus & other)
+OPlus::OPlus(const OPlus & other)
 {
 
 }
 
-OpPlus &OpPlus::operator=(const OpPlus & other)
+OPlus &OPlus::operator=(const OPlus & other)
 {
-  OpPlus tmp(other);
+  OPlus tmp(other);
   swap(tmp);
   return *this;
 }
 
-void OpPlus::swap(OpPlus & other)
+void OPlus::swap(OPlus & other)
 {
 
 }
 
-OpPlus::~OpPlus()
+OPlus::~OPlus()
 {
 
 }
 
-void OpPlus::accept(Visitor *v)
+void OPlus::accept(Visitor *v)
 {
-  v->visitOpPlus(this);
+  v->visitOPlus(this);
 }
 
-OpPlus *OpPlus::clone() const
+OPlus *OPlus::clone() const
 {
-  return new OpPlus(*this);
+  return new OPlus(*this);
 }
 
 
 
-/********************   OpMinus    ********************/
-OpMinus::OpMinus()
-{
-
-}
-
-OpMinus::OpMinus(const OpMinus & other)
+/********************   OMinus    ********************/
+OMinus::OMinus()
 {
 
 }
 
-OpMinus &OpMinus::operator=(const OpMinus & other)
+OMinus::OMinus(const OMinus & other)
 {
-  OpMinus tmp(other);
+
+}
+
+OMinus &OMinus::operator=(const OMinus & other)
+{
+  OMinus tmp(other);
   swap(tmp);
   return *this;
 }
 
-void OpMinus::swap(OpMinus & other)
+void OMinus::swap(OMinus & other)
 {
 
 }
 
-OpMinus::~OpMinus()
+OMinus::~OMinus()
 {
 
 }
 
-void OpMinus::accept(Visitor *v)
+void OMinus::accept(Visitor *v)
 {
-  v->visitOpMinus(this);
+  v->visitOMinus(this);
 }
 
-OpMinus *OpMinus::clone() const
+OMinus *OMinus::clone() const
 {
-  return new OpMinus(*this);
+  return new OMinus(*this);
 }
 
 
 
-/********************   OpTimes    ********************/
-OpTimes::OpTimes()
-{
-
-}
-
-OpTimes::OpTimes(const OpTimes & other)
+/********************   OTimes    ********************/
+OTimes::OTimes()
 {
 
 }
 
-OpTimes &OpTimes::operator=(const OpTimes & other)
+OTimes::OTimes(const OTimes & other)
 {
-  OpTimes tmp(other);
+
+}
+
+OTimes &OTimes::operator=(const OTimes & other)
+{
+  OTimes tmp(other);
   swap(tmp);
   return *this;
 }
 
-void OpTimes::swap(OpTimes & other)
+void OTimes::swap(OTimes & other)
 {
 
 }
 
-OpTimes::~OpTimes()
+OTimes::~OTimes()
 {
 
 }
 
-void OpTimes::accept(Visitor *v)
+void OTimes::accept(Visitor *v)
 {
-  v->visitOpTimes(this);
+  v->visitOTimes(this);
 }
 
-OpTimes *OpTimes::clone() const
+OTimes *OTimes::clone() const
 {
-  return new OpTimes(*this);
+  return new OTimes(*this);
 }
 
 
 
-/********************   OpDiv    ********************/
-OpDiv::OpDiv()
-{
-
-}
-
-OpDiv::OpDiv(const OpDiv & other)
+/********************   ODiv    ********************/
+ODiv::ODiv()
 {
 
 }
 
-OpDiv &OpDiv::operator=(const OpDiv & other)
+ODiv::ODiv(const ODiv & other)
 {
-  OpDiv tmp(other);
+
+}
+
+ODiv &ODiv::operator=(const ODiv & other)
+{
+  ODiv tmp(other);
   swap(tmp);
   return *this;
 }
 
-void OpDiv::swap(OpDiv & other)
+void ODiv::swap(ODiv & other)
 {
 
 }
 
-OpDiv::~OpDiv()
+ODiv::~ODiv()
 {
 
 }
 
-void OpDiv::accept(Visitor *v)
+void ODiv::accept(Visitor *v)
 {
-  v->visitOpDiv(this);
+  v->visitODiv(this);
 }
 
-OpDiv *OpDiv::clone() const
+ODiv *ODiv::clone() const
 {
-  return new OpDiv(*this);
+  return new ODiv(*this);
 }
 
 
 
-/********************   OpMod    ********************/
-OpMod::OpMod()
-{
-
-}
-
-OpMod::OpMod(const OpMod & other)
+/********************   OMod    ********************/
+OMod::OMod()
 {
 
 }
 
-OpMod &OpMod::operator=(const OpMod & other)
+OMod::OMod(const OMod & other)
 {
-  OpMod tmp(other);
+
+}
+
+OMod &OMod::operator=(const OMod & other)
+{
+  OMod tmp(other);
   swap(tmp);
   return *this;
 }
 
-void OpMod::swap(OpMod & other)
+void OMod::swap(OMod & other)
 {
 
 }
 
-OpMod::~OpMod()
+OMod::~OMod()
 {
 
 }
 
-void OpMod::accept(Visitor *v)
+void OMod::accept(Visitor *v)
 {
-  v->visitOpMod(this);
+  v->visitOMod(this);
 }
 
-OpMod *OpMod::clone() const
+OMod *OMod::clone() const
 {
-  return new OpMod(*this);
+  return new OMod(*this);
 }
 
 
 
-/********************   OpLTH    ********************/
-OpLTH::OpLTH()
-{
-
-}
-
-OpLTH::OpLTH(const OpLTH & other)
+/********************   OLTH    ********************/
+OLTH::OLTH()
 {
 
 }
 
-OpLTH &OpLTH::operator=(const OpLTH & other)
+OLTH::OLTH(const OLTH & other)
 {
-  OpLTH tmp(other);
+
+}
+
+OLTH &OLTH::operator=(const OLTH & other)
+{
+  OLTH tmp(other);
   swap(tmp);
   return *this;
 }
 
-void OpLTH::swap(OpLTH & other)
+void OLTH::swap(OLTH & other)
 {
 
 }
 
-OpLTH::~OpLTH()
+OLTH::~OLTH()
 {
 
 }
 
-void OpLTH::accept(Visitor *v)
+void OLTH::accept(Visitor *v)
 {
-  v->visitOpLTH(this);
+  v->visitOLTH(this);
 }
 
-OpLTH *OpLTH::clone() const
+OLTH *OLTH::clone() const
 {
-  return new OpLTH(*this);
+  return new OLTH(*this);
 }
 
 
 
-/********************   OpLE    ********************/
-OpLE::OpLE()
-{
-
-}
-
-OpLE::OpLE(const OpLE & other)
+/********************   OLE    ********************/
+OLE::OLE()
 {
 
 }
 
-OpLE &OpLE::operator=(const OpLE & other)
+OLE::OLE(const OLE & other)
 {
-  OpLE tmp(other);
+
+}
+
+OLE &OLE::operator=(const OLE & other)
+{
+  OLE tmp(other);
   swap(tmp);
   return *this;
 }
 
-void OpLE::swap(OpLE & other)
+void OLE::swap(OLE & other)
 {
 
 }
 
-OpLE::~OpLE()
+OLE::~OLE()
 {
 
 }
 
-void OpLE::accept(Visitor *v)
+void OLE::accept(Visitor *v)
 {
-  v->visitOpLE(this);
+  v->visitOLE(this);
 }
 
-OpLE *OpLE::clone() const
+OLE *OLE::clone() const
 {
-  return new OpLE(*this);
+  return new OLE(*this);
 }
 
 
 
-/********************   OpGTH    ********************/
-OpGTH::OpGTH()
-{
-
-}
-
-OpGTH::OpGTH(const OpGTH & other)
+/********************   OGTH    ********************/
+OGTH::OGTH()
 {
 
 }
 
-OpGTH &OpGTH::operator=(const OpGTH & other)
+OGTH::OGTH(const OGTH & other)
 {
-  OpGTH tmp(other);
+
+}
+
+OGTH &OGTH::operator=(const OGTH & other)
+{
+  OGTH tmp(other);
   swap(tmp);
   return *this;
 }
 
-void OpGTH::swap(OpGTH & other)
+void OGTH::swap(OGTH & other)
 {
 
 }
 
-OpGTH::~OpGTH()
+OGTH::~OGTH()
 {
 
 }
 
-void OpGTH::accept(Visitor *v)
+void OGTH::accept(Visitor *v)
 {
-  v->visitOpGTH(this);
+  v->visitOGTH(this);
 }
 
-OpGTH *OpGTH::clone() const
+OGTH *OGTH::clone() const
 {
-  return new OpGTH(*this);
+  return new OGTH(*this);
 }
 
 
 
-/********************   OpGE    ********************/
-OpGE::OpGE()
-{
-
-}
-
-OpGE::OpGE(const OpGE & other)
+/********************   OGE    ********************/
+OGE::OGE()
 {
 
 }
 
-OpGE &OpGE::operator=(const OpGE & other)
+OGE::OGE(const OGE & other)
 {
-  OpGE tmp(other);
+
+}
+
+OGE &OGE::operator=(const OGE & other)
+{
+  OGE tmp(other);
   swap(tmp);
   return *this;
 }
 
-void OpGE::swap(OpGE & other)
+void OGE::swap(OGE & other)
 {
 
 }
 
-OpGE::~OpGE()
+OGE::~OGE()
 {
 
 }
 
-void OpGE::accept(Visitor *v)
+void OGE::accept(Visitor *v)
 {
-  v->visitOpGE(this);
+  v->visitOGE(this);
 }
 
-OpGE *OpGE::clone() const
+OGE *OGE::clone() const
 {
-  return new OpGE(*this);
+  return new OGE(*this);
 }
 
 
 
-/********************   OpEQU    ********************/
-OpEQU::OpEQU()
-{
-
-}
-
-OpEQU::OpEQU(const OpEQU & other)
+/********************   OEQU    ********************/
+OEQU::OEQU()
 {
 
 }
 
-OpEQU &OpEQU::operator=(const OpEQU & other)
+OEQU::OEQU(const OEQU & other)
 {
-  OpEQU tmp(other);
+
+}
+
+OEQU &OEQU::operator=(const OEQU & other)
+{
+  OEQU tmp(other);
   swap(tmp);
   return *this;
 }
 
-void OpEQU::swap(OpEQU & other)
+void OEQU::swap(OEQU & other)
 {
 
 }
 
-OpEQU::~OpEQU()
+OEQU::~OEQU()
 {
 
 }
 
-void OpEQU::accept(Visitor *v)
+void OEQU::accept(Visitor *v)
 {
-  v->visitOpEQU(this);
+  v->visitOEQU(this);
 }
 
-OpEQU *OpEQU::clone() const
+OEQU *OEQU::clone() const
 {
-  return new OpEQU(*this);
+  return new OEQU(*this);
 }
 
 
 
-/********************   OpNE    ********************/
-OpNE::OpNE()
-{
-
-}
-
-OpNE::OpNE(const OpNE & other)
+/********************   ONE    ********************/
+ONE::ONE()
 {
 
 }
 
-OpNE &OpNE::operator=(const OpNE & other)
+ONE::ONE(const ONE & other)
 {
-  OpNE tmp(other);
+
+}
+
+ONE &ONE::operator=(const ONE & other)
+{
+  ONE tmp(other);
   swap(tmp);
   return *this;
 }
 
-void OpNE::swap(OpNE & other)
+void ONE::swap(ONE & other)
 {
 
 }
 
-OpNE::~OpNE()
+ONE::~ONE()
 {
 
 }
 
-void OpNE::accept(Visitor *v)
+void ONE::accept(Visitor *v)
 {
-  v->visitOpNE(this);
+  v->visitONE(this);
 }
 
-OpNE *OpNE::clone() const
+ONE *ONE::clone() const
 {
-  return new OpNE(*this);
+  return new ONE(*this);
 }
 
 

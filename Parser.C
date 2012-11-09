@@ -2061,12 +2061,12 @@ yyreduce:
     {
         case 2:
 #line 648 "Latte.y"
-    {  std::reverse((yyvsp[(1) - (1)].listtopdef_)->begin(),(yyvsp[(1) - (1)].listtopdef_)->end()) ;(yyval.program_) = new TProgram((yyvsp[(1) - (1)].listtopdef_)); (yyval.program_)->line_number = yy_mylinenumber; YY_RESULT_Program_= (yyval.program_); ;}
+    {  std::reverse((yyvsp[(1) - (1)].listtopdef_)->begin(),(yyvsp[(1) - (1)].listtopdef_)->end()) ;(yyval.program_) = new CProgram((yyvsp[(1) - (1)].listtopdef_)); (yyval.program_)->line_number = yy_mylinenumber; YY_RESULT_Program_= (yyval.program_); ;}
     break;
 
   case 3:
 #line 650 "Latte.y"
-    {  std::reverse((yyvsp[(4) - (6)].listarg_)->begin(),(yyvsp[(4) - (6)].listarg_)->end()) ;(yyval.topdef_) = new TFnDef((yyvsp[(1) - (6)].type_), (yyvsp[(2) - (6)].string_), (yyvsp[(4) - (6)].listarg_), (yyvsp[(6) - (6)].block_)); (yyval.topdef_)->line_number = yy_mylinenumber;  ;}
+    {  std::reverse((yyvsp[(4) - (6)].listarg_)->begin(),(yyvsp[(4) - (6)].listarg_)->end()) ;(yyval.topdef_) = new CFnDef((yyvsp[(1) - (6)].type_), (yyvsp[(2) - (6)].string_), (yyvsp[(4) - (6)].listarg_), (yyvsp[(6) - (6)].block_)); (yyval.topdef_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 4:
@@ -2081,7 +2081,7 @@ yyreduce:
 
   case 6:
 #line 655 "Latte.y"
-    {  (yyval.arg_) = new TArg((yyvsp[(1) - (2)].type_), (yyvsp[(2) - (2)].string_)); (yyval.arg_)->line_number = yy_mylinenumber;  ;}
+    {  (yyval.arg_) = new CArg((yyvsp[(1) - (2)].type_), (yyvsp[(2) - (2)].string_)); (yyval.arg_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 7:
@@ -2101,7 +2101,7 @@ yyreduce:
 
   case 10:
 #line 661 "Latte.y"
-    {  (yyval.block_) = new TBlock((yyvsp[(2) - (3)].liststmt_)); (yyval.block_)->line_number = yy_mylinenumber;  ;}
+    {  (yyval.block_) = new SBlock((yyvsp[(2) - (3)].liststmt_)); (yyval.block_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 11:
@@ -2116,57 +2116,57 @@ yyreduce:
 
   case 13:
 #line 666 "Latte.y"
-    {  (yyval.stmt_) = new Empty(); (yyval.stmt_)->line_number = yy_mylinenumber;  ;}
+    {  (yyval.stmt_) = new SEmpty(); (yyval.stmt_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 14:
 #line 667 "Latte.y"
-    {  (yyval.stmt_) = new BStmt((yyvsp[(1) - (1)].block_)); (yyval.stmt_)->line_number = yy_mylinenumber;  ;}
+    {  (yyval.stmt_) = new SBStmt((yyvsp[(1) - (1)].block_)); (yyval.stmt_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 15:
 #line 668 "Latte.y"
-    {  std::reverse((yyvsp[(2) - (3)].listitem_)->begin(),(yyvsp[(2) - (3)].listitem_)->end()) ;(yyval.stmt_) = new Decl((yyvsp[(1) - (3)].type_), (yyvsp[(2) - (3)].listitem_)); (yyval.stmt_)->line_number = yy_mylinenumber;  ;}
+    {  std::reverse((yyvsp[(2) - (3)].listitem_)->begin(),(yyvsp[(2) - (3)].listitem_)->end()) ;(yyval.stmt_) = new SDecl((yyvsp[(1) - (3)].type_), (yyvsp[(2) - (3)].listitem_)); (yyval.stmt_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 16:
 #line 669 "Latte.y"
-    {  (yyval.stmt_) = new Ass((yyvsp[(1) - (4)].string_), (yyvsp[(3) - (4)].expr_)); (yyval.stmt_)->line_number = yy_mylinenumber;  ;}
+    {  (yyval.stmt_) = new SAss((yyvsp[(1) - (4)].string_), (yyvsp[(3) - (4)].expr_)); (yyval.stmt_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 17:
 #line 670 "Latte.y"
-    {  (yyval.stmt_) = new Incr((yyvsp[(1) - (3)].string_)); (yyval.stmt_)->line_number = yy_mylinenumber;  ;}
+    {  (yyval.stmt_) = new SIncr((yyvsp[(1) - (3)].string_)); (yyval.stmt_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 18:
 #line 671 "Latte.y"
-    {  (yyval.stmt_) = new Decr((yyvsp[(1) - (3)].string_)); (yyval.stmt_)->line_number = yy_mylinenumber;  ;}
+    {  (yyval.stmt_) = new SDecr((yyvsp[(1) - (3)].string_)); (yyval.stmt_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 19:
 #line 672 "Latte.y"
-    {  (yyval.stmt_) = new Ret((yyvsp[(2) - (3)].expr_)); (yyval.stmt_)->line_number = yy_mylinenumber;  ;}
+    {  (yyval.stmt_) = new SRet((yyvsp[(2) - (3)].expr_)); (yyval.stmt_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 20:
 #line 673 "Latte.y"
-    {  (yyval.stmt_) = new VRet(); (yyval.stmt_)->line_number = yy_mylinenumber;  ;}
+    {  (yyval.stmt_) = new SVRet(); (yyval.stmt_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 21:
 #line 674 "Latte.y"
-    {  (yyval.stmt_) = new Cond((yyvsp[(3) - (5)].expr_), (yyvsp[(5) - (5)].stmt_)); (yyval.stmt_)->line_number = yy_mylinenumber;  ;}
+    {  (yyval.stmt_) = new SCond((yyvsp[(3) - (5)].expr_), (yyvsp[(5) - (5)].stmt_)); (yyval.stmt_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 22:
 #line 675 "Latte.y"
-    {  (yyval.stmt_) = new CondElse((yyvsp[(3) - (7)].expr_), (yyvsp[(5) - (7)].stmt_), (yyvsp[(7) - (7)].stmt_)); (yyval.stmt_)->line_number = yy_mylinenumber;  ;}
+    {  (yyval.stmt_) = new SCondElse((yyvsp[(3) - (7)].expr_), (yyvsp[(5) - (7)].stmt_), (yyvsp[(7) - (7)].stmt_)); (yyval.stmt_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 23:
 #line 676 "Latte.y"
-    {  (yyval.stmt_) = new While((yyvsp[(3) - (5)].expr_), (yyvsp[(5) - (5)].stmt_)); (yyval.stmt_)->line_number = yy_mylinenumber;  ;}
+    {  (yyval.stmt_) = new SWhile((yyvsp[(3) - (5)].expr_), (yyvsp[(5) - (5)].stmt_)); (yyval.stmt_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 24:
@@ -2176,12 +2176,12 @@ yyreduce:
 
   case 25:
 #line 679 "Latte.y"
-    {  (yyval.item_) = new NoInit((yyvsp[(1) - (1)].string_)); (yyval.item_)->line_number = yy_mylinenumber;  ;}
+    {  (yyval.item_) = new SNoInit((yyvsp[(1) - (1)].string_)); (yyval.item_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 26:
 #line 680 "Latte.y"
-    {  (yyval.item_) = new Init((yyvsp[(1) - (3)].string_), (yyvsp[(3) - (3)].expr_)); (yyval.item_)->line_number = yy_mylinenumber;  ;}
+    {  (yyval.item_) = new SInit((yyvsp[(1) - (3)].string_), (yyvsp[(3) - (3)].expr_)); (yyval.item_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 27:
@@ -2331,57 +2331,57 @@ yyreduce:
 
   case 56:
 #line 721 "Latte.y"
-    {  (yyval.addop_) = new OpPlus(); (yyval.addop_)->line_number = yy_mylinenumber;  ;}
+    {  (yyval.addop_) = new OPlus(); (yyval.addop_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 57:
 #line 722 "Latte.y"
-    {  (yyval.addop_) = new OpMinus(); (yyval.addop_)->line_number = yy_mylinenumber;  ;}
+    {  (yyval.addop_) = new OMinus(); (yyval.addop_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 58:
 #line 724 "Latte.y"
-    {  (yyval.mulop_) = new OpTimes(); (yyval.mulop_)->line_number = yy_mylinenumber;  ;}
+    {  (yyval.mulop_) = new OTimes(); (yyval.mulop_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 59:
 #line 725 "Latte.y"
-    {  (yyval.mulop_) = new OpDiv(); (yyval.mulop_)->line_number = yy_mylinenumber;  ;}
+    {  (yyval.mulop_) = new ODiv(); (yyval.mulop_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 60:
 #line 726 "Latte.y"
-    {  (yyval.mulop_) = new OpMod(); (yyval.mulop_)->line_number = yy_mylinenumber;  ;}
+    {  (yyval.mulop_) = new OMod(); (yyval.mulop_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 61:
 #line 728 "Latte.y"
-    {  (yyval.relop_) = new OpLTH(); (yyval.relop_)->line_number = yy_mylinenumber;  ;}
+    {  (yyval.relop_) = new OLTH(); (yyval.relop_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 62:
 #line 729 "Latte.y"
-    {  (yyval.relop_) = new OpLE(); (yyval.relop_)->line_number = yy_mylinenumber;  ;}
+    {  (yyval.relop_) = new OLE(); (yyval.relop_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 63:
 #line 730 "Latte.y"
-    {  (yyval.relop_) = new OpGTH(); (yyval.relop_)->line_number = yy_mylinenumber;  ;}
+    {  (yyval.relop_) = new OGTH(); (yyval.relop_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 64:
 #line 731 "Latte.y"
-    {  (yyval.relop_) = new OpGE(); (yyval.relop_)->line_number = yy_mylinenumber;  ;}
+    {  (yyval.relop_) = new OGE(); (yyval.relop_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 65:
 #line 732 "Latte.y"
-    {  (yyval.relop_) = new OpEQU(); (yyval.relop_)->line_number = yy_mylinenumber;  ;}
+    {  (yyval.relop_) = new OEQU(); (yyval.relop_)->line_number = yy_mylinenumber;  ;}
     break;
 
   case 66:
 #line 733 "Latte.y"
-    {  (yyval.relop_) = new OpNE(); (yyval.relop_)->line_number = yy_mylinenumber;  ;}
+    {  (yyval.relop_) = new ONE(); (yyval.relop_)->line_number = yy_mylinenumber;  ;}
     break;
 
 

@@ -2,8 +2,10 @@ CC = g++
 CCFLAGS = -g
 FLEX = flex
 BISON = bison
+LATEX = latex
+DVIPS = dvips
 
-all: testLatte Latte.ps
+all: testLatte 
 
 clean:
 	rm -f *.o testLatte

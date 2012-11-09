@@ -20,131 +20,131 @@ void Skeleton::visitAddOp(AddOp* t) {} //abstract class
 void Skeleton::visitMulOp(MulOp* t) {} //abstract class
 void Skeleton::visitRelOp(RelOp* t) {} //abstract class
 
-void Skeleton::visitTProgram(TProgram *tprogram)
+void Skeleton::visitCProgram(CProgram *cprogram)
 {
-  /* Code For TProgram Goes Here */
+  /* Code For CProgram Goes Here */
 
-  tprogram->listtopdef_->accept(this);
+  cprogram->listtopdef_->accept(this);
 
 }
 
-void Skeleton::visitTFnDef(TFnDef *tfndef)
+void Skeleton::visitCFnDef(CFnDef *cfndef)
 {
-  /* Code For TFnDef Goes Here */
+  /* Code For CFnDef Goes Here */
 
-  tfndef->type_->accept(this);
-  visitIdent(tfndef->ident_);
-  tfndef->listarg_->accept(this);
-  tfndef->block_->accept(this);
+  cfndef->type_->accept(this);
+  visitIdent(cfndef->ident_);
+  cfndef->listarg_->accept(this);
+  cfndef->block_->accept(this);
 
 }
 
-void Skeleton::visitTArg(TArg *targ)
+void Skeleton::visitCArg(CArg *carg)
 {
-  /* Code For TArg Goes Here */
+  /* Code For CArg Goes Here */
 
-  targ->type_->accept(this);
-  visitIdent(targ->ident_);
+  carg->type_->accept(this);
+  visitIdent(carg->ident_);
 
 }
 
-void Skeleton::visitTBlock(TBlock *tblock)
+void Skeleton::visitSBlock(SBlock *sblock)
 {
-  /* Code For TBlock Goes Here */
+  /* Code For SBlock Goes Here */
 
-  tblock->liststmt_->accept(this);
+  sblock->liststmt_->accept(this);
 
 }
 
-void Skeleton::visitEmpty(Empty *empty)
+void Skeleton::visitSEmpty(SEmpty *sempty)
 {
-  /* Code For Empty Goes Here */
-
-
-}
-
-void Skeleton::visitBStmt(BStmt *bstmt)
-{
-  /* Code For BStmt Goes Here */
-
-  bstmt->block_->accept(this);
-
-}
-
-void Skeleton::visitDecl(Decl *decl)
-{
-  /* Code For Decl Goes Here */
-
-  decl->type_->accept(this);
-  decl->listitem_->accept(this);
-
-}
-
-void Skeleton::visitAss(Ass *ass)
-{
-  /* Code For Ass Goes Here */
-
-  visitIdent(ass->ident_);
-  ass->expr_->accept(this);
-
-}
-
-void Skeleton::visitIncr(Incr *incr)
-{
-  /* Code For Incr Goes Here */
-
-  visitIdent(incr->ident_);
-
-}
-
-void Skeleton::visitDecr(Decr *decr)
-{
-  /* Code For Decr Goes Here */
-
-  visitIdent(decr->ident_);
-
-}
-
-void Skeleton::visitRet(Ret *ret)
-{
-  /* Code For Ret Goes Here */
-
-  ret->expr_->accept(this);
-
-}
-
-void Skeleton::visitVRet(VRet *vret)
-{
-  /* Code For VRet Goes Here */
+  /* Code For SEmpty Goes Here */
 
 
 }
 
-void Skeleton::visitCond(Cond *cond)
+void Skeleton::visitSBStmt(SBStmt *sbstmt)
 {
-  /* Code For Cond Goes Here */
+  /* Code For SBStmt Goes Here */
 
-  cond->expr_->accept(this);
-  cond->stmt_->accept(this);
+  sbstmt->block_->accept(this);
 
 }
 
-void Skeleton::visitCondElse(CondElse *condelse)
+void Skeleton::visitSDecl(SDecl *sdecl)
 {
-  /* Code For CondElse Goes Here */
+  /* Code For SDecl Goes Here */
 
-  condelse->expr_->accept(this);
-  condelse->stmt_1->accept(this);
-  condelse->stmt_2->accept(this);
+  sdecl->type_->accept(this);
+  sdecl->listitem_->accept(this);
 
 }
 
-void Skeleton::visitWhile(While *while)
+void Skeleton::visitSAss(SAss *sass)
 {
-  /* Code For While Goes Here */
+  /* Code For SAss Goes Here */
 
-  while->expr_->accept(this);
-  while->stmt_->accept(this);
+  visitIdent(sass->ident_);
+  sass->expr_->accept(this);
+
+}
+
+void Skeleton::visitSIncr(SIncr *sincr)
+{
+  /* Code For SIncr Goes Here */
+
+  visitIdent(sincr->ident_);
+
+}
+
+void Skeleton::visitSDecr(SDecr *sdecr)
+{
+  /* Code For SDecr Goes Here */
+
+  visitIdent(sdecr->ident_);
+
+}
+
+void Skeleton::visitSRet(SRet *sret)
+{
+  /* Code For SRet Goes Here */
+
+  sret->expr_->accept(this);
+
+}
+
+void Skeleton::visitSVRet(SVRet *svret)
+{
+  /* Code For SVRet Goes Here */
+
+
+}
+
+void Skeleton::visitSCond(SCond *scond)
+{
+  /* Code For SCond Goes Here */
+
+  scond->expr_->accept(this);
+  scond->stmt_->accept(this);
+
+}
+
+void Skeleton::visitSCondElse(SCondElse *scondelse)
+{
+  /* Code For SCondElse Goes Here */
+
+  scondelse->expr_->accept(this);
+  scondelse->stmt_1->accept(this);
+  scondelse->stmt_2->accept(this);
+
+}
+
+void Skeleton::visitSWhile(SWhile *swhile)
+{
+  /* Code For SWhile Goes Here */
+
+  swhile->expr_->accept(this);
+  swhile->stmt_->accept(this);
 
 }
 
@@ -156,20 +156,20 @@ void Skeleton::visitSExp(SExp *sexp)
 
 }
 
-void Skeleton::visitNoInit(NoInit *noinit)
+void Skeleton::visitSNoInit(SNoInit *snoinit)
 {
-  /* Code For NoInit Goes Here */
+  /* Code For SNoInit Goes Here */
 
-  visitIdent(noinit->ident_);
+  visitIdent(snoinit->ident_);
 
 }
 
-void Skeleton::visitInit(Init *init)
+void Skeleton::visitSInit(SInit *sinit)
 {
-  /* Code For Init Goes Here */
+  /* Code For SInit Goes Here */
 
-  visitIdent(init->ident_);
-  init->expr_->accept(this);
+  visitIdent(sinit->ident_);
+  sinit->expr_->accept(this);
 
 }
 
@@ -312,79 +312,79 @@ void Skeleton::visitEOr(EOr *eor)
 
 }
 
-void Skeleton::visitOpPlus(OpPlus *opplus)
+void Skeleton::visitOPlus(OPlus *oplus)
 {
-  /* Code For OpPlus Goes Here */
+  /* Code For OPlus Goes Here */
 
 
 }
 
-void Skeleton::visitOpMinus(OpMinus *opminus)
+void Skeleton::visitOMinus(OMinus *ominus)
 {
-  /* Code For OpMinus Goes Here */
+  /* Code For OMinus Goes Here */
 
 
 }
 
-void Skeleton::visitOpTimes(OpTimes *optimes)
+void Skeleton::visitOTimes(OTimes *otimes)
 {
-  /* Code For OpTimes Goes Here */
+  /* Code For OTimes Goes Here */
 
 
 }
 
-void Skeleton::visitOpDiv(OpDiv *opdiv)
+void Skeleton::visitODiv(ODiv *odiv)
 {
-  /* Code For OpDiv Goes Here */
+  /* Code For ODiv Goes Here */
 
 
 }
 
-void Skeleton::visitOpMod(OpMod *opmod)
+void Skeleton::visitOMod(OMod *omod)
 {
-  /* Code For OpMod Goes Here */
+  /* Code For OMod Goes Here */
 
 
 }
 
-void Skeleton::visitOpLTH(OpLTH *oplth)
+void Skeleton::visitOLTH(OLTH *olth)
 {
-  /* Code For OpLTH Goes Here */
+  /* Code For OLTH Goes Here */
 
 
 }
 
-void Skeleton::visitOpLE(OpLE *ople)
+void Skeleton::visitOLE(OLE *ole)
 {
-  /* Code For OpLE Goes Here */
+  /* Code For OLE Goes Here */
 
 
 }
 
-void Skeleton::visitOpGTH(OpGTH *opgth)
+void Skeleton::visitOGTH(OGTH *ogth)
 {
-  /* Code For OpGTH Goes Here */
+  /* Code For OGTH Goes Here */
 
 
 }
 
-void Skeleton::visitOpGE(OpGE *opge)
+void Skeleton::visitOGE(OGE *oge)
 {
-  /* Code For OpGE Goes Here */
+  /* Code For OGE Goes Here */
 
 
 }
 
-void Skeleton::visitOpEQU(OpEQU *opequ)
+void Skeleton::visitOEQU(OEQU *oequ)
 {
-  /* Code For OpEQU Goes Here */
+  /* Code For OEQU Goes Here */
 
 
 }
 
-void Skeleton::visitOpNE(OpNE *opne)
+void Skeleton::visitONE(ONE *one)
 {
-  /* Code For OpNE Goes Here */
+  /* Code For ONE Goes Here */
 
 
 }

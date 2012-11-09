@@ -1,48 +1,48 @@
 entrypoints Program ;
 
-TProgram.   Program ::= [TopDef] ;
+CProgram.   Program ::= [TopDef] ;
 
-TFnDef.     TopDef ::= Type Ident "(" [Arg] ")" Block ;
+CFnDef.     TopDef ::= Type Ident "(" [Arg] ")" Block ;
 
 separator nonempty TopDef "" ;
 
-TArg.       Arg ::= Type Ident;
+CArg.       Arg ::= Type Ident;
 
 separator  Arg "," ;
 
 -- statements ----------------------------------------------
 
-TBlock.     Block ::= "{" [Stmt] "}" ;
+SBlock.     Block ::= "{" [Stmt] "}" ;
 
 separator  Stmt "" ;
 
-Empty.     Stmt ::= ";" ;
+SEmpty.     Stmt ::= ";" ;
 
-BStmt.     Stmt ::= Block ;
+SBStmt.     Stmt ::= Block ;
 
-Decl.      Stmt ::= Type [Item] ";" ;
+SDecl.      Stmt ::= Type [Item] ";" ;
 
-NoInit.    Item ::= Ident ; 
+SNoInit.    Item ::= Ident ; 
 
-Init.      Item ::= Ident "=" Expr ;
+SInit.      Item ::= Ident "=" Expr ;
 
 separator nonempty Item "," ;
 
-Ass.       Stmt ::= Ident "=" Expr  ";" ;
+SAss.       Stmt ::= Ident "=" Expr  ";" ;
 
-Incr.      Stmt ::= Ident "++"  ";" ;
+SIncr.      Stmt ::= Ident "++"  ";" ;
 
-Decr.      Stmt ::= Ident "--"  ";" ;
+SDecr.      Stmt ::= Ident "--"  ";" ;
 
-Ret.       Stmt ::= "return" Expr ";" ;
+SRet.       Stmt ::= "return" Expr ";" ;
 
-VRet.      Stmt ::= "return" ";" ;
+SVRet.      Stmt ::= "return" ";" ;
 
-Cond.      Stmt ::= "if" "(" Expr ")" Stmt  ;
+SCond.      Stmt ::= "if" "(" Expr ")" Stmt  ;
 
-CondElse.  Stmt ::= "if" "(" Expr ")" Stmt "else" Stmt  ;
+SCondElse.  Stmt ::= "if" "(" Expr ")" Stmt "else" Stmt  ;
 
-While.     Stmt ::= "while" "(" Expr ")" Stmt ;
+SWhile.     Stmt ::= "while" "(" Expr ")" Stmt ;
 
 SExp.      Stmt ::= Expr  ";" ;
 
@@ -94,27 +94,27 @@ separator  Expr "," ;
 
 -- operators -----------------------------------------------
 
-OpPlus.      AddOp ::= "+" ;
+OPlus.      AddOp ::= "+" ;
 
-OpMinus.     AddOp ::= "-" ;
+OMinus.     AddOp ::= "-" ;
 
-OpTimes.     MulOp ::= "*" ;
+OTimes.     MulOp ::= "*" ;
 
-OpDiv.       MulOp ::= "/" ;
+ODiv.       MulOp ::= "/" ;
 
-OpMod.       MulOp ::= "%" ;
+OMod.       MulOp ::= "%" ;
 
-OpLTH.       RelOp ::= "<" ;
+OLTH.       RelOp ::= "<" ;
 
-OpLE.        RelOp ::= "<=" ;
+OLE.        RelOp ::= "<=" ;
 
-OpGTH.       RelOp ::= ">" ;
+OGTH.       RelOp ::= ">" ;
 
-OpGE.        RelOp ::= ">=" ;
+OGE.        RelOp ::= ">=" ;
 
-OpEQU.       RelOp ::= "==" ;
+OEQU.       RelOp ::= "==" ;
 
-OpNE.        RelOp ::= "!=" ;
+ONE.        RelOp ::= "!=" ;
 
 -- comments ------------------------------------------------
 
