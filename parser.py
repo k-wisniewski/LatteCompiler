@@ -17,7 +17,13 @@ class LatteParser:
     def p_TopDef(self, p):
         'TopDef : Type ID PAR_L ListArg PAR_R Block'
         p[0] = {'Type': 'FunDecl', 'LineNo': p.lineno(1), 'Name': p[2],
-                'ListArg': p[4], 'Body': p[6], 'LatteType': p[1]}
+                'ListArg': p[4], 'Body': p[6], 'LatteType': p[1],
+                'StartPos': p[1]['StartPos'], 'EndPos': p[6]['EndPos']}
+
+    def p_TopDef_error(self, p):
+        'TopDef : ID PAR_L ListArg PAR_R Block'
+        print >> sys.stderr, 'ERROR: undeclared return type: in declaration of %s, line: %d, pos: %d - %d' %\
+                (p[1], p.lineno(1), p.lexpos(1), p[5]['EndPos'])
 
     def p_ListTopDef_empty(self, p):
         'ListTopDef : empty'
@@ -189,9 +195,9 @@ class LatteParser:
     precedence = (
         ('left', 'OR'),
         ('left', 'AND'),
-        ('nonassoc', 'RelOp'),
-        ('left', 'AddOp'),
-        ('left', 'MulOp'),
+        ('nonassoc', 'RelOp', 'LESS', 'GT', 'LEQ', 'GEQ', 'EQ', 'NEQ'),
+        ('left', 'AddOp', 'PLUS', 'MINUS'),
+        ('left', 'MulOp', 'TIMES', 'DIV', 'MOD'),
         ('right', 'UnaryOp')
     )
 

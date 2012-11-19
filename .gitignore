@@ -2,3 +2,6 @@
 .*.sw*
 *.o
 testLatte
+*.pyc
+parsetab.py
+parser.out

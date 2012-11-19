@@ -30,8 +30,9 @@ def main(argv=None):
     with open(input_file) as input_fd:
         parser_instance = parser.LatteParser()
         syntax_tree = parser_instance.parse(input_fd.read())
-        semantic_analyzer = typecheck.SemanticAnalyzer(syntax_tree)
-        semantic_analyzer.analyze()
+        if syntax_tree:
+            semantic_analyzer = typecheck.SemanticAnalyzer(syntax_tree)
+            semantic_analyzer.analyze()
 
 #    except Usage as err:
 #        print >> sys.stderr, err.msg
