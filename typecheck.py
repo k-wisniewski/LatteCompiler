@@ -17,7 +17,7 @@ class VariableUndeclared(Exception):
         self.msg = msg
 
 
-class SemanticAnalyzer:
+class LatteSemanticAnalyzer:
 
     def __load_functions(self):
         main = None

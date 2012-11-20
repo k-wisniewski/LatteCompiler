@@ -31,7 +31,7 @@ def main(argv=None):
         parser_instance = parser.LatteParser()
         syntax_tree = parser_instance.parse(input_fd.read())
         if syntax_tree:
-            semantic_analyzer = typecheck.SemanticAnalyzer(syntax_tree)
+            semantic_analyzer = typecheck.LatteSemanticAnalyzer(syntax_tree)
             semantic_analyzer.analyze()
 
 #    except Usage as err:

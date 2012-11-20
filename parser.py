@@ -211,6 +211,7 @@ class LatteParser:
                 | FALSE'''
         p[0] = {'Type': 'BoolLiteral', 'Value': p[1], 'LineNo': p.lineno(1),
             'StartPos': p.lexspan(1)[0], 'EndPos': p.lexspan(1)[1] + len(str(p[1]))}
+
     def p_Expr_num_literal(self, p):
        'Expr : NUM'
        p[0] = {'Type': 'NumLiteral', 'Value': p[1], 'LineNo': p.lineno(1),
@@ -218,7 +219,7 @@ class LatteParser:
 
     def p_Expr_str_literal(self, p):
        'Expr : LITSTR'
-       p[0] = {'Type': 'StrLiteral', 'Value': p[1], 'LineNo': p.lineno(1),
+       p[0] = {'Type': 'StrLiteral', 'Value': p[1][1:-1], 'LineNo': p.lineno(1),
             'StartPos': p.lexspan(1)[0], 'EndPos': p.lexspan(1)[1] + len(str(p[1]))}
 
     def p_Expr_paren(self, p):
@@ -259,7 +260,7 @@ class LatteParser:
 
     def __init__(self):
         self.lexer = LatteLexer().build()
-        self.parser = yacc.yacc(module=self, debug=True, start='Program')
+        self.parser = yacc.yacc(module=self, debug=True, start='Expr')
 
     def parse(self, source):
         return yacc.parse(source, tracking=True, debug=0, lexer=self.lexer)
