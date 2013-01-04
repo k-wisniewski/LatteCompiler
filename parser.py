@@ -61,17 +61,12 @@ class LatteParser:
                 | STRING
                 | VOID'''
         p[0] = {'TypeName': p[1], 'LineNo': p.lineno(1), \
-                'StartPos': p.lexpos(1), 'EndPos': p.lexpos(1) + len(p[1])}
+                'StartPos': p.lexpos(1), 'EndPos': p.lexpos(1) + len(p[1]), 'Returns': False}
 
     def p_Block(self, p):
         'Block : BR_L ListStmt BR_R'
         p[0] = {'Type': 'Block', 'LineNo': p.lineno(1), 'Stmts': p[2],
-                'StartPos': p.lexpos(1), 'EndPos': p.lexpos(3)}
-
-    def p_Stmt_vardecl(self, p):
-        'Stmt : Type ListItem END_S'
-        p[0] = {'Type': 'VariableDecl', 'LineNo': p.lineno(1), 'LatteType': p[1], 'Items': p[2],
-                'StartPos': p[1]['StartPos'], 'EndPos': p.lexpos(3)}
+                'StartPos': p.lexpos(1), 'EndPos': p.lexpos(3), 'Returns': False}
 
     def p_ListStmt_empty(self, p):
         'ListStmt : empty'
@@ -82,10 +77,15 @@ class LatteParser:
         p[1].append(p[2])
         p[0] = p[1]
 
+    def p_Stmt_vardecl(self, p):
+        'Stmt : Type ListItem END_S'
+        p[0] = {'Type': 'VariableDecl', 'LineNo': p.lineno(1), 'LatteType': p[1], 'Items': p[2],
+                'StartPos': p[1]['StartPos'], 'EndPos': p.lexpos(3), 'Returns': False}
+
     def p_Stmt_while(self, p):
         'Stmt : WHILE PAR_L Expr PAR_R Stmt'
         p[0] = {'Type': 'WhileLoop', 'LineNo': p.lineno(1), 'Condition': p[3], 'Stmt': p[5],
-                'StartPos': p.lexpos(1), 'EndPos': p[5]['EndPos']}
+                'StartPos': p.lexpos(1), 'EndPos': p[5]['EndPos'], 'Returns': False}
 
     def p_Stmt_while_error(self, p):
         'Stmt : WHILE PAR_L error PAR_R Stmt'
@@ -94,12 +94,12 @@ class LatteParser:
 
     def p_Stmt_end(self, p):
         'Stmt : END_S'
-        p[0] = {'Type': 'End', 'StartPos': p.lexspan(1), 'EndPos': p.lexspan(1)}
+        p[0] = {'Type': 'End', 'StartPos': p.lexspan(1), 'EndPos': p.lexspan(1), 'Returns': False}
 
     def p_Stmt_if(self, p):
         'Stmt : IF PAR_L Expr PAR_R Stmt'
         p[0] = {'Type': 'IfStmt', 'LineNo': p.lineno(1), 'Condition': p[3], 'Stmt': p[5],
-                'StartPos': p.lexpos(1), 'EndPos': p[5]['EndPos']}
+                'StartPos': p.lexpos(1), 'EndPos': p[5]['EndPos'], 'Returns': False}
 
     def p_Stmt_if_error(self, p):
         'Stmt : IF PAR_L error PAR_R Stmt'
@@ -109,7 +109,7 @@ class LatteParser:
     def p_Stmt_ifelse(self, p):
         'Stmt : IF PAR_L Expr PAR_R Stmt ELSE Stmt'
         p[0] = {'Type': 'IfElseStmt', 'LineNo': p.lineno(1), 'Condition': p[3],
-                'Stmt1': p[5], 'Stmt2': p[7], 'StartPos': p.lexpos(1), 'EndPos': p[5]['EndPos']}
+                'Stmt1': p[5], 'Stmt2': p[7], 'StartPos': p.lexpos(1), 'EndPos': p[5]['EndPos'], 'Returns': False}
 
     def p_Stmt_ifelse_error(self, p):
         'Stmt : IF PAR_L error PAR_R Stmt ELSE Stmt'
@@ -119,7 +119,7 @@ class LatteParser:
     def p_Stmt_expr(self, p):
         'Stmt : Expr END_S'
         p[0] = {'Type': 'Expr', 'LineNo': p.lineno(1), 'Expr': p[1],
-                'StartPos': p[1]['StartPos'], 'EndPos': p.lexpos(2)}
+                'StartPos': p[1]['StartPos'], 'EndPos': p.lexpos(2), 'Returns': False}
 
     def p_Stmt_block(self, p):
         'Stmt : Block'
@@ -128,23 +128,23 @@ class LatteParser:
     def p_Stmt_assign(self, p):
         'Stmt : ID ASSIGN Expr END_S'
         p[0] = {'Type': 'Assignment', 'LineNo': p.lineno(1), 'Name': p[1], 'Expr': p[3],
-                'StartPos': p.lexpos(1), 'EndPos': p.lexpos(4)}
+                'StartPos': p.lexpos(1), 'EndPos': p.lexpos(4), 'Returns': False}
 
     def p_Stmt_inc_dec(self, p):
         '''Stmt : ID INC END_S
               | ID DEC END_S'''
         p[0] = {'Type': 'IncDec', 'LineNo': p.lineno(1), 'Name': p[1], 'Op': p[2],
-                'StartPos': p.lexpos(1), 'EndPos': p.lexpos(3)}
+                'StartPos': p.lexpos(1), 'EndPos': p.lexpos(3), 'Returns': False}
 
     def p_Stmt_ret(self, p):
         'Stmt : RET Expr END_S'
         p[0] = {'Type': 'Return', 'LineNo': p.lineno(1), 'Expr': p[2],
-                'StartPos': p.lexpos(1), 'EndPos': p.lexpos(2)}
+                'StartPos': p.lexpos(1), 'EndPos': p.lexpos(2), 'Returns': True}
 
     def p_Stmt_ret_noexp(self, p):
         'Stmt : RET END_S'
         p[0] = {'Type': 'Return', 'LineNo': p.lineno(1), 'Expr': None,
-                'StartPos': p.lexpos(1), 'EndPos': p.lexpos(2)}
+                'StartPos': p.lexpos(1), 'EndPos': p.lexpos(2), 'Returns': True}
 
     def p_Item_noinit(self, p):
         'Item : ID'
@@ -165,6 +165,11 @@ class LatteParser:
         'ListItem : ListItem COMMA Item'
         p[1].append(p[3])
         p[0] = p[1]
+
+    def p_LogOp(self, p):
+        '''LogOp : AND
+               | OR'''
+        p[0] = {'Op': p[1], 'StartPos': p.lexpos(1), 'EndPos': p.lexpos(1), 'MetaType': 'LogOp'}
 
     def p_AddOp(self, p):
         '''AddOp : PLUS
@@ -193,8 +198,7 @@ class LatteParser:
 
 
     precedence = (
-        ('left', 'OR'),
-        ('left', 'AND'),
+        ('left', 'LogOp', 'OR', 'AND'),
         ('nonassoc', 'RelOp', 'LESS', 'GT', 'LEQ', 'GEQ', 'EQ', 'NEQ'),
         ('left', 'AddOp', 'PLUS', 'MINUS'),
         ('left', 'MulOp', 'TIMES', 'DIV', 'MOD'),
@@ -209,7 +213,7 @@ class LatteParser:
     def p_Expr_bool_literal(self, p):
         '''Expr : TRUE
                 | FALSE'''
-        p[0] = {'Type': 'BoolLiteral', 'Value': p[1], 'LineNo': p.lineno(1),
+        p[0] = {'Type': 'BoolLiteral', 'Value': True if p[1] == 'true' else False, 'LineNo': p.lineno(1),
             'StartPos': p.lexspan(1)[0], 'EndPos': p.lexspan(1)[1] + len(str(p[1]))}
 
     def p_Expr_num_literal(self, p):
@@ -237,8 +241,7 @@ class LatteParser:
                 'StartPos': p[1]['StartPos'] - 1, 'EndPos': p[2]['EndPos']}
 
     def p_Expr_binop(self, p):
-        '''Expr : Expr OR Expr
-              | Expr AND Expr
+        '''Expr : Expr LogOp Expr %prec LogOp
               | Expr RelOp Expr %prec RelOp
               | Expr AddOp Expr %prec AddOp
               | Expr MulOp Expr %prec MulOp'''
@@ -260,7 +263,7 @@ class LatteParser:
 
     def __init__(self):
         self.lexer = LatteLexer().build()
-        self.parser = yacc.yacc(module=self, debug=True, start='Expr')
+        self.parser = yacc.yacc(module=self, debug=True, start='Program')
 
     def parse(self, source):
         return yacc.parse(source, tracking=True, debug=0, lexer=self.lexer)
