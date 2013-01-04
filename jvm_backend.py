@@ -1,3 +1,4 @@
+from utils import get_var
 OPTIMIZED_LIMIT = 4
 
 
@@ -26,7 +27,7 @@ class JVM_Backend:
         self.__locals_counter = 0
         self.__stack_limit = 0
         self.__label_counter = 0
-        self.__functions = functions
+        self.__functions = {function['Name']: function for function in functions}
         self.__environments = []
 
 
@@ -103,7 +104,14 @@ class JVM_Backend:
         else:
             self.emit_expr(expr['Left'])
             self.emit_expr(expr['Right'])
-            self.emit(RELATIONAL_MNEMONICS[expr['Op']['Op']][BIN_NORM] + ' %s\n' % true_label)
+            if expr['Right']['EvalType'] in ('int', 'boolean'):
+                self.emit(RELATIONAL_MNEMONICS[expr['Op']['Op']][BIN_NORM] + ' %s\n' % true_label)
+            elif expr['Right']['EvalType'] == 'string':
+                self.emit('invokevirtual java/lang/String/equals(Ljava/lang/String)B')
+                if not jump_if_true and not jump_if_false:
+                    return
+                self.emit('if_icmpge %s' % true_label)
+
         if jump_if_false and jump_if_false != next_label:
             self.emit('goto %d\n' % jump_if_false)
         elif not jump_if_false:
@@ -132,7 +140,7 @@ class JVM_Backend:
             self.emit_expr(expr['Arg'])
             if expr['Op']['Op'] == '-':
                 self.emit("ineg\n")
-            else
+            else:
                 # TODO: negation
                 pass
         elif expr['Type'] == 'BinaryOp':
@@ -144,10 +152,16 @@ class JVM_Backend:
                 self.emit_expr_rel(expr, jump_if_true, jump_if_false, next_label)
 
         elif expr['Type'] == 'Var':
-            JVMVarNo, prefix, delimiter = self.get_var_info(expr['Name'])
-            self.emit('%cload%c%d\n', (prefix, delimiter, VarNo))
+            self.emit('%cload%c%d\n' % self.get_var_info(expr['Name']))
         elif expr['Type'] == 'FunCall':
-            return self.__eval_expr_type_funcall(expr)
+            return self.emit_funcall(expr)
+
+
+    def emit_funcall(self, expr):
+        for arg in expr['ListArg']:
+            self.emit('%cload%c%d\n' % self.get_var_info(expr['Name']))
+        self.emit('invokestatic %s %c\n' % (expr['Name'],
+            self.get_jvm_type(self.__functions(expr['Name'])['LatteType']['TypeName'])))
 
 
     def emit_var_decl(self, stmt):
@@ -191,12 +205,11 @@ class JVM_Backend:
 
     def emit_assign(self, stmt):
         self.emit_expr(stmt['Expr'])
-        JVMVarNo, prefix, delimiter = self.get_var_info(expr['Name'])
-        self.emit('%cstore%c%d\n', (prefix, delimiter, JVMVarNo))
+        self.emit('%cstore%c%d\n' % self.get_var_info(expr['Name']))
 
 
     def emit_inc_dec(self, stmt):
-        self.emit('iinc %d %d\n', self.get_var(expr['Name'])['JVMVarNo'],
+        self.emit('iinc %d %d\n', get_var(self.__environments, expr['Name'])['JVMVarNo'],
             1 if stmt['Op'] == '++' else -1)
 
 
@@ -236,9 +249,9 @@ class JVM_Backend:
 
 
     def get_var_info(self, name):
-        JVMVar = self.get_var(name)
+        JVMVar = get_var(self.__environments, name)
         prefix = 'i' if JVMVar['LatteType']['TypeName'] in ('int', 'boolean') else 'a'
-        return JVMVar['JVMVarNo'], prefix, '_' if JVMVar['JVMVarNo'] < OPTIMIZED_LIMIT else ' '
+        return  prefix, '_' if JVMVar['JVMVarNo'] < OPTIMIZED_LIMIT else ' ', JVMVar['JVMVarNo']
 
 
     def get_argument_list(self, function):

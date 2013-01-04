@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import typecheck
 import optimizer
 import parser
@@ -11,13 +12,18 @@ def usage():
 def main(argv=None):
     if argv is None:
         argv = sys.argv
-    #try:
-    input_file = argv[1]
+    try:
+        input_file = argv[1]
+    except IndexError:
+        usage()
+        return
     try:
         opts, args = getopt.getopt(argv[2:], "o:h:t", ["output=", "help", "target="])
     except getopt.error, msg:
         usage()
         return
+
+    output_file, target = None, None
 
     for opt, arg in opts:
         if opt in ("-o", "--output"):
