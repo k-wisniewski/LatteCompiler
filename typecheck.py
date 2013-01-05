@@ -149,7 +149,9 @@ class LatteSemanticAnalyzer:
         elif expression['Type'] == 'BinaryOp':
             return self.__eval_expression_type_binary(node, key)
         elif expression['Type'] == 'Var':
-            return get_var(self.__environments, expression)['LatteType']['TypeName']
+            var_type = get_var(self.__environments, expression)['LatteType']['TypeName']
+            node[key]['EvalType'] = var_type
+            return var_type
         elif expression['Type'] == 'FunCall':
             return self.__eval_expression_type_funcall(node, key)
         else:
@@ -347,7 +349,7 @@ class LatteSemanticAnalyzer:
         if statement['Condition']['Type'] in ('BoolLiteral', 'NumLiteral') and\
                 statement['Condition']['Value']:
             return statement['Stmt' if statement['Type'] == 'IfStmt' else 'Stmt1']
-        else:
+        elif statement['Condition']['Type'] in ('BoolLiteral', 'NumLiteral'):
             if statement['Type'] == 'IfElseStmt':
                 return statement['Stmt2']
             else:

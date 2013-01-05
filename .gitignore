@@ -3,5 +3,8 @@
 *.o
 testLatte
 *.pyc
+*.class
+*.lat
+*.j
 parsetab.py
 parser.out

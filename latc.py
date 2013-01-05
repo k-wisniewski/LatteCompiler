@@ -44,7 +44,7 @@ def main(argv=None):
             semantic_analyzer = typecheck.LatteSemanticAnalyzer(syntax_tree, optimizer_instance)
             semantic_analyzer.analyze()
             if target == "jvm":
-                jvm_backend_instance = jvm_backend.JVM_Backend(syntax_tree)
+                jvm_backend_instance = jvm_backend.JVM_Backend(syntax_tree, semantic_analyzer.get_functions())
                 with open(output_file, "w+") as output_fd:
                     output_fd.write(jvm_backend_instance.generate_jvm())
                 #os.execlp("java", "java", "-jar", "jasmin.jar", output_file)
