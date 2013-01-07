@@ -7,7 +7,7 @@ from optimizer   import LatteOptimizer
 from typecheck   import LatteSemanticAnalyzer
 from jvm_backend import JVM_Backend
 from subprocess  import call
-from utils       import Logger, VERSION, BLUE, YELLOW, RST
+from utils       import Logger, VERSION, BLUE, YELLOW, RST, RED
 
 
 def usage():
@@ -78,15 +78,17 @@ def main(argv=None):
                                 output_fd.write(jvm_backend_instance.generate_jvm())
                         except IOError:
                             logger.error('couldn\'t open jvm assembly file for writing')
-                        logger.log('Generating jvm assembly file: .....$GREENdone!$RST')
+                        logger.log('Generating jvm assembly file: .....$GREENdone!$RST', True)
                         with open(os.devnull) as devnull:
+                            print >> sys.stderr, RED,
                             call(['java', '-jar', 'jasmin.jar', output_file], stdout=devnull)
+                            print >> sys.stderr, RST
                         logger.log('Generating class file: ............$GREENdone!$RST')
                 else:
                     logger.error('Semantic analysis failed')
             else:
                 logger.error('Syntax analysis failed')
     except IOError:
-        logger.error('couldn\'t open source file \'%s\'')
+        logger.error('couldn\'t open source file \'%s\'' % input_file)
 if __name__ == '__main__':
     sys.exit(main())

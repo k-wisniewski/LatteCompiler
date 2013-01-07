@@ -6,5 +6,6 @@ testLatte
 *.class
 *.lat
 *.j
+labs/*
 parsetab.py
 parser.out

@@ -2,12 +2,13 @@ import sys
 
 
 MAIN_MANGLING = 65428301
-VERSION = '1.0-alpha3'
+VERSION = '1.0-beta1'
 
 
 class VariableUndeclared(Exception):
     def __init__(self, msg):
         self.msg = msg
+
 
 BLACK   = '\033[030;1m'
 RED     = '\033[031;1m'
@@ -25,14 +26,23 @@ class Logger:
         self.verbose = False
 
 
-    def log(self, what):
+    def log(self, what, no_newline=False):
         if self.verbose:
-            print >> sys.stderr, '\033[032;1m[DEBUG]: \033[0m' + \
-                what.replace('$BLACK', BLACK).replace('$RED', RED).\
-                    replace('$GREEN', GREEN).replace('$YELLOW', YELLOW).\
-                        replace('$BLUE', BLUE).replace('$MAGENTA', MAGENTA).\
-                        replace('$CYAN', CYAN).replace('$WHITE', WHITE).\
-                        replace('$RST', RST)
+            if no_newline:
+                print >> sys.stderr, '\033[032;1m[DEBUG]: \033[0m' + \
+                    what.replace('$BLACK', BLACK).replace('$RED', RED).\
+                        replace('$GREEN', GREEN).replace('$YELLOW', YELLOW).\
+                            replace('$BLUE', BLUE).replace('$MAGENTA', MAGENTA).\
+                            replace('$CYAN', CYAN).replace('$WHITE', WHITE).\
+                            replace('$RST', RST),
+            else:
+                print >> sys.stderr, '\033[032;1m[DEBUG]: \033[0m' + \
+                    what.replace('$BLACK', BLACK).replace('$RED', RED).\
+                        replace('$GREEN', GREEN).replace('$YELLOW', YELLOW).\
+                            replace('$BLUE', BLUE).replace('$MAGENTA', MAGENTA).\
+                            replace('$CYAN', CYAN).replace('$WHITE', WHITE).\
+                            replace('$RST', RST)
+
 
     def error(self, what):
         print '\033[031;1m[ERROR]:\033[0m \033[4;1m' + what + '\033[0m'

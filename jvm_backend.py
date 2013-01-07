@@ -90,7 +90,7 @@ class JVM_Backend:
             next_condition_label = 'LFALSE%d' % self.__label_counter
             self.emit_expr(expr['Left'], true_label, next_condition_label, next_condition_label, negate)
             self.emit(next_condition_label + ':\n')
-            self.emit_expr(expr['Right'], true_label, )
+            self.emit_expr(expr['Right'], true_label, jump_if_false, next_label, negate)
             if not jump_if_true and not jump_if_false:
                 self.emit('iconst_0\n')
                 self.emit('goto LEND%d\n' % self.__label_counter)
@@ -102,13 +102,6 @@ class JVM_Backend:
 
 
     def emit_expr_rel(self, expr, jump_if_true, jump_if_false, next_label, negate):
-        #print "----------------------- EXPRESSION -------------------------"
-        #print expr['Left']
-        #print expr['Op']['Op']
-        #print expr['Right']
-        #print "-----"
-        #print "jump_if_true: %s, jump_if_false %s, next_label %s, negate %d" % (jump_if_true, jump_if_false, next_label, negate)
-        #print "------------------------------------------------------------"
         true_label = jump_if_true if jump_if_true else 'LTRUE%d' % self.__label_counter
         if expr['Left']['Type'] in ('BoolLiteral', 'NumLiteral') and expr['Left']['Value'] == 0:
             self.emit_expr(expr['Right'])
@@ -134,7 +127,7 @@ class JVM_Backend:
             self.emit('goto %s\n' % jump_if_false)
         elif not jump_if_false and not jump_if_true:
             self.emit('iconst_0\n')
-            self.emit(true_label + '\n')
+            self.emit(true_label + ':\n')
             self.emit('iconst_1\n')
 
 
@@ -177,7 +170,8 @@ class JVM_Backend:
     def emit_expr_funcall(self, expr, jump_if_true, jump_if_false, next_label, negate):
         for arg in expr['ListArg']:
             self.emit_expr(arg)
-        self.emit('invokestatic %s/%s()%s\n' % (CLASS_NAME, expr['Name'],
+        self.emit('invokestatic %s/%s(%s)%s\n' % (CLASS_NAME, expr['Name'],
+            self.get_argument_list(self.__functions[expr['Name']]),
             self.get_jvm_type(self.__functions[expr['Name']]['LatteType']['TypeName'])))
         if jump_if_true and jump_if_true != next_label:
             self.emit(('ifeq' if negate else 'ifgt') + ' %s\n' % jump_if_true)
@@ -186,10 +180,6 @@ class JVM_Backend:
 
 
     def emit_expr(self, expr, jump_if_true=None, jump_if_false=None, next_label=None, negate=False):
-        #if expr['Type'] in ('BinaryOp', 'UnaryOp'):
-        #    print expr['Op']['Op']
-        #elif expr['Type'] == 'Var':
-        #    print expr['Name']
         if expr['Type'] == 'NumLiteral':
             self.emit_expr_num(expr)
         elif expr['Type'] == 'BoolLiteral':
@@ -271,6 +261,7 @@ class JVM_Backend:
             self.emit_expr(stmt['Expr'])
             self.emit('%creturn\n' % ('i' if stmt['Expr']['EvalType'] in ('int', 'boolean') else 'a'))
         else:
+            self.void_ret_handled = True
             self.emit('return\n')
 
     def emit_block(self, stmt):
@@ -344,8 +335,11 @@ class JVM_Backend:
             self.current_function.append('.limit locals ')
             self.current_function.append('.limit stack 100\n')
             self.__push_env(function)
+            self.void_ret_handled = False
             for stmt in function['Body']['Stmts']:
                 self.emit_stmt(stmt)
+            if function['LatteType']['TypeName'] == 'void' and not self.void_ret_handled:
+                self.emit('return\n')
             self.emit('.end method\n')
             self.current_function[1] = self.current_function[1] + "%d\n" % self.__locals_counter
             self.__jasmin_strings.append(''.join(self.current_function))
