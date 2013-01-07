@@ -170,7 +170,11 @@ class JVM_Backend:
     def emit_expr_funcall(self, expr, jump_if_true, jump_if_false, next_label, negate):
         for arg in expr['ListArg']:
             self.emit_expr(arg)
-        self.emit('invokestatic %s/%s(%s)%s\n' % (CLASS_NAME, expr['Name'],
+        if expr['Name'] in ('printInt', 'printString', 'error', 'readInt', 'readString'):
+            class_ = 'Runtime'
+        else:
+            class_ = CLASS_NAME
+        self.emit('invokestatic %s/%s(%s)%s\n' % (class_, expr['Name'],
             self.get_argument_list(self.__functions[expr['Name']]),
             self.get_jvm_type(self.__functions[expr['Name']]['LatteType']['TypeName'])))
         if jump_if_true and jump_if_true != next_label:
