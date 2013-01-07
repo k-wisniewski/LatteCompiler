@@ -2,6 +2,7 @@ import ply.yacc as yacc
 import sys
 
 from lexer import LatteLexer
+from utils import Logger
 
 class LatteParser:
     tokens = LatteLexer.tokens[1:]
@@ -22,8 +23,9 @@ class LatteParser:
 
     def p_TopDef_error(self, p):
         'TopDef : ID PAR_L ListArg PAR_R Block'
-        print >> sys.stderr, 'ERROR: undeclared return type: in declaration of %s, line: %d, pos: %d - %d' %\
-                (p[1], p.lineno(1), p.lexpos(1), p[5]['EndPos'])
+        self.no_errors = False
+        self.logger.error('undeclared return type: in declaration of %s, line: %d, pos: %d - %d' %\
+                (p[1], p.lineno(1), p.lexpos(1), p[5]['EndPos']))
 
     def p_ListTopDef_empty(self, p):
         'ListTopDef : empty'
@@ -89,8 +91,9 @@ class LatteParser:
 
     def p_Stmt_while_error(self, p):
         'Stmt : WHILE PAR_L error PAR_R Stmt'
-        print >> sys.stderr, 'Syntax error: invalid expression in while loop condition, line: %d, pos: %d' %\
-                (p.lineno(3), p.lexpos(2) + 1)
+        self.no_errors = False
+        self.logger.error('Syntax error: invalid expression in while loop condition, line: %d, pos: %d' %\
+                (p.lineno(3), p.lexpos(2) + 1))
 
     def p_Stmt_end(self, p):
         'Stmt : END_S'
@@ -103,8 +106,9 @@ class LatteParser:
 
     def p_Stmt_if_error(self, p):
         'Stmt : IF PAR_L error PAR_R Stmt'
-        print >> sys.stderr, 'Syntax error: invalid expression in if statement condition, line %d, pos %d' %\
-                (p.lineno(3), p.lexpos(2) + 1)
+        self.no_errors = False
+        self.logger.error('Syntax error: invalid expression in if statement condition, line %d, pos %d' %\
+                (p.lineno(3), p.lexpos(2) + 1))
 
     def p_Stmt_ifelse(self, p):
         'Stmt : IF PAR_L Expr PAR_R Stmt ELSE Stmt'
@@ -113,8 +117,9 @@ class LatteParser:
 
     def p_Stmt_ifelse_error(self, p):
         'Stmt : IF PAR_L error PAR_R Stmt ELSE Stmt'
-        print >> sys.stderr, 'Syntax error: invalid expression in if/else statement condition, line %d, pos %d' %\
-                (p.lineno(3), p.lexpos(2) + 1)
+        self.no_errors = False
+        self.logger.error('Syntax error: invalid expression in if/else statement condition, line %d, pos %d' %\
+                (p.lineno(3), p.lexpos(2) + 1))
 
     def p_Stmt_expr(self, p):
         'Stmt : Expr END_S'
@@ -264,9 +269,11 @@ class LatteParser:
     def __init__(self):
         self.lexer = LatteLexer().build()
         self.parser = yacc.yacc(module=self, debug=True, start='Program')
+        self.logger = Logger()
+        self.no_errors = True
 
     def parse(self, source):
-        return yacc.parse(source, tracking=True, debug=0, lexer=self.lexer)
+        return yacc.parse(source, tracking=True, debug=0, lexer=self.lexer), self.no_errors
 
 if __name__ == "__main__":
     p = LatteParser()

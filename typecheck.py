@@ -1,7 +1,7 @@
 # TODO: Check if function always returns
 
 import sys
-from utils import get_var, VariableUndeclared
+from utils import get_var, VariableUndeclared, MAIN_MANGLING, Logger
 from builtins import BUILTINS_INFO
 
 class InvalidExpression(Exception):
@@ -22,7 +22,7 @@ class LatteSemanticAnalyzer:
             if not function:
                 continue
             if function['Name'] in self.__functions.keys():
-                self.__errors.append('ERROR: function %s already defined at line %d, \
+                self.__errors.append('function %s already defined at line %d, \
                         redefined at line: %d' % (function['Name'], \
                         self.__functions['Name']['LineNo'], function['LineNo']))
                 continue
@@ -30,10 +30,10 @@ class LatteSemanticAnalyzer:
             if function['Name'] == 'main':
                 main = function
         if not main:
-            self.__errors.append("ERROR: didn't encounter main function")
+            self.__errors.append("didn't encounter main function")
             return
         if main['LatteType']['TypeName'] != 'int':
-            self.__errors.append('ERROR: in declaration of function main:\n\
+            self.__errors.append('in declaration of function main:\n\
                     main must return value of type int, line: %d' %
                     main['LineNo'])
             return
@@ -45,7 +45,7 @@ class LatteSemanticAnalyzer:
         if function:
             for param in function['ListArg']:
                 if param['Name'] in self.__environments[-1].keys():
-                    self.__errors.append('ERROR: repeated argument name %s, in declaration of %s, line: %d, pos: %d - %d' %\
+                    self.__errors.append('repeated argument name %s, in declaration of %s, line: %d, pos: %d - %d' %\
                         (param['Name'], function['Name'], function['LineNo'], function['StartPos'], function['EndPos']))
                     continue
                 self.__environments[-1][param['Name']] = param
@@ -67,10 +67,10 @@ class LatteSemanticAnalyzer:
             node[key]['EvalType'] = 'int'
             return 'int'
         elif expression['Op']['Op'] == '!':
-            raise InvalidExpression('ERROR: applying operator \'!\' to non-boolean value of type %s, line: %d, pos: %d - %d' % \
+            raise InvalidExpression('applying operator \'!\' to non-boolean value of type %s, line: %d, pos: %d - %d' % \
                     (arg_type, expression['LineNo'], expression['StartPos'], expression['EndPos']))
         elif expression['Op']['Op'] == '-':
-            raise InvalidExpression('ERROR: applying operator \'-\' to non-integer value of type %s, line: %d, pos: %d - %d' %\
+            raise InvalidExpression('applying operator \'-\' to non-integer value of type %s, line: %d, pos: %d - %d' %\
                     (arg_type, expression['LineNo'], expression['StartPos'], expression['EndPos']))
 
 
@@ -80,31 +80,40 @@ class LatteSemanticAnalyzer:
         right_type = self.__eval_expression_type(expression, 'Right')
         if expression['Op']['MetaType'] == 'LogOp':
             if left_type != 'boolean' or right_type != 'boolean':
-                raise InvalidExpression('ERROR: operator \'%s\' applied to non-boolean'
+                raise InvalidExpression('operator \'%s\' applied to non-boolean'
                     'expressions, line: %d, pos: %d - %d' % (expression['Op']['Op'],\
                     expression['LineNo'], expression['Left']['StartPos'], expression['Right']['EndPos']))
             node[key]['EvalType'] = 'boolean'
             return 'boolean'
-        elif expression['Op']['MetaType'] == 'RelOp':
-            if left_type not in ['int', 'boolean'] or\
-                    right_type not in ['int', 'boolean']:
-                        raise InvalidExpression('ERROR: relational operator %s applied to invalid argument types:\n'
-                            'expected int or boolean - got %s and %s, line: %d, pos: %d - %d' %\
+        elif expression['Op']['MetaType'] == 'RelOp' and expression['Op']['Op'] not in ('==', '!='):
+            if left_type not in ['int', 'boolean'] or right_type not in ['int', 'boolean'] or\
+                    left_type != right_type:
+                        raise InvalidExpression('relational operator %s applied to invalid argument types:\n'
+                            'expected expression of type \'int\' or \'boolean\''
+                            ' - got %s and %s, line: %d, pos: %d - %d' %\
                                 (expression['Op']['Op'], left_type, right_type, expression['LineNo'],\
                                 expression['Left']['StartPos'], expression['Right']['EndPos']))
             node[key]['EvalType'] = 'boolean'
             return 'boolean'
+        elif expression['Op']['Op'] in ('==', '!='):
+            if left_type != right_type or left_type == 'void':
+                raise InvalidExpression('relational operator %s applied to incalid argument types:\n'
+                    'expected expression of type \'%s\', got \'%s\' and \'%s\', line: %d, pos %d - %d' %\
+                        (expression['Op']['Op'], left_type, left_type, right_type, expression['LineNo'],
+                            expression['Left']['StartPos'], expression['Right']['EndPos']))
+            node[key]['EvalType'] = 'boolean'
+            return 'boolean'
         elif expression['Op']['MetaType'] == 'ArithmOp' and expression['Op']['Op'] != '+':
             if left_type != 'int' or right_type != 'int':
-                raise InvalidExpression('ERROR: arithmetic operator %s applied to invalid argument types:\n'
-                    'expected expression of type \'int\', got %s and %s, line: %d, pos: %d - %d' %\
+                raise InvalidExpression('arithmetic operator %s applied to invalid argument types:\n'
+                    'expected expression of type \'int\', got \'%s\' and \'%s\', line: %d, pos: %d - %d' %\
                         (expression['Op']['Op'], left_type, right_type, expression['LineNo'],
                             expression['Left']['StartPos'], expression['Right']['EndPos']))
             node[key]['EvalType'] = 'boolean'
             return 'int'
         elif expression['Op']['Op'] == '+':
             if left_type not in ['int', 'string'] or right_type not in ['int', 'string'] or left_type != right_type:
-                raise InvalidExpression('ERROR: arithmetic operator %s applied to invalid argument types:\n'
+                raise InvalidExpression('arithmetic operator %s applied to invalid argument types:\n'
                     'expected expression of type \'int\' or \'string\', got %s and %s, line: %d, pos: %d - %d' %\
                         (expression['Op']['Op'], left_type, right_type, expression['LineNo'],
                             expression['Left']['StartPos'], expression['Right']['EndPos']))
@@ -115,18 +124,18 @@ class LatteSemanticAnalyzer:
     def __eval_expression_type_funcall(self, node, key):
         expression = node[key]
         if expression['Name'] not in self.__functions.keys():
-            raise InvalidExpression('ERROR: function %s undeclared, line: %d, pos: %d - %d' %\
+            raise InvalidExpression('function %s undeclared, line: %d, pos: %d - %d' %\
                     (expression['Name'], expression['LineNo'], expression['StartPos'], expression['EndPos']))
         function = self.__functions[expression['Name']]
         if len(function['ListArg']) != len(expression['ListArg']):
-            raise InvalidExpression('ERROR: invalid number of arguments provided to function %s: '
+            raise InvalidExpression('invalid number of arguments provided to function %s: '
                 'expected: %d, got: %d, line: %d, pos: %d - %d' %\
                             (function['Name'], len(function['ListArg']), len(expression['ListArg']),\
                                 expression['LineNo'], expression['StartPos'], expression['EndPos']))
         for index, (arg_expected, arg_provided) in enumerate(zip(function['ListArg'], expression['ListArg'])):
             expr_type = self.__eval_expression_type(expression['ListArg'], index)
             if expr_type != arg_expected['LatteType']['TypeName']:
-                raise InvalidExpression('ERROR: in a call to function %s: expected: %s, got: %s, '
+                raise InvalidExpression('in a call to function %s: expected: %s, got: %s, '
                     'line: %d, pos %d - %d' % (function['Name'], arg_expected['LatteType']['TypeName'],
                             expr_type, expression['LineNo'], expression['StartPos'], expression['EndPos']))
         node[key]['EvalType'] = function['LatteType']['TypeName']
@@ -155,7 +164,7 @@ class LatteSemanticAnalyzer:
         elif expression['Type'] == 'FunCall':
             return self.__eval_expression_type_funcall(node, key)
         else:
-            raise InvalidExpression('ERROR: unrecognized expression type')
+            raise InvalidExpression('unrecognized expression type')
 
 
     def __typecheck_statement(self, statement):
@@ -172,44 +181,46 @@ class LatteSemanticAnalyzer:
                 self.__eval_expression_type(statement, 'Expr')
             except (InvalidExpression, VariableUndeclared) as e:
                 self.__errors.append(e.msg)
-            self.__optimizer.simplify_expression(statement, 'Expr')
+            if self.__optimize > 0 and not self.__errors:
+                self.__optimizer.simplify_expression(statement, 'Expr')
             return statement
         elif statement['Type'] == 'Block':
             return self.__typecheck_block(statement)
         elif statement['Type'] == 'Assignment':
             return self.__typecheck_assignment(statement)
         elif statement['Type'] == 'IncDec':
-            self.__typecheck_inc_dec(statement)
+            return self.__typecheck_inc_dec(statement)
         elif statement['Type'] == 'Return':
             return self.__typecheck_return(statement)
         else:
-            raise InvalidStatementType('ERROR: unrecognized type of statement,'
+            raise InvalidStatementType('unrecognized type of statement,'
                 'line: %d, pos: %d - %d', (statement['LineNo'],\
                 statement['StartPos'], statement['EndPos']))
 
 
     def __typecheck_return(self, statement):
         if statement['Type'] != 'Return':
-            raise InvalidStatementType('ERROR: not a return statement')
+            raise InvalidStatementType('not a return statement')
         try:
             expr_type = None
             if statement['Expr']:
                 expr_type = self.__eval_expression_type(statement, 'Expr')
-                self.__optimizer.simplify_expression(statement, 'Expr')
+                if self.__optimize > 0 and not self.__errors:
+                    self.__optimizer.simplify_expression(statement, 'Expr')
             if self.__current_function['LatteType']['TypeName'] == 'void' and expr_type:
-                self.__errors.append('ERROR: in return statement: returning value of type %s'
+                self.__errors.append('in return statement: returning value of type %s'
                     'in function %s declared not to return anything, line %d, pos: %d - %d'%\
                         (expr_type, self.__current_function['Name'], statement['LineNo'],\
                         statement['StartPos'], statement['EndPos']))
                 return statement;
             if self.__current_function['LatteType']['TypeName'] != 'void' and not expr_type:
-                self.__errors.append('ERROR: in return statement: returning without value, '
+                self.__errors.append('in return statement: returning without value, '
                     'while function %s declared to return value of type %s, line %d, pos: %d - %d' %\
                         (self.__current_function['Name'], self.__current_function['LatteType']['TypeName'],
                             statement['LineNo'], statement['StartPos'], statement['EndPos']))
                 return statement;
             if expr_type and expr_type != self.__current_function['LatteType']['TypeName']:
-                self.__errors.append('ERROR: in return statement: returning value of type %s '
+                self.__errors.append('in return statement: returning value of type %s '
                     'in a function declared to return type %s, line: %d, pos: %d - %d' %\
                         (expr_type, self.__current_function['LatteType']['TypeName'],\
                         statement['LineNo'], statement['StartPos'], statement['EndPos']))
@@ -221,10 +232,10 @@ class LatteSemanticAnalyzer:
 
     def __typecheck_inc_dec(self, statement):
         if statement['Type'] != 'IncDec':
-            raise InvalidStatementType('ERROR: not an increment/decrement statement')
+            raise InvalidStatementType('not an increment/decrement statement')
         try:
             if get_var(self.__environments, statement)['LatteType']['TypeName'] != 'int':
-                    self.__errors.append('ERROR: in increment/decrement statement:\n'
+                    self.__errors.append('in increment/decrement statement:\n'
                         'invalid type of variable %s, line: %d pos %d - %d' %\
                             (statement['Name'], statement['LineNo'], \
                             statement['StartPos'], statement['EndPos']))
@@ -235,18 +246,19 @@ class LatteSemanticAnalyzer:
 
     def __typecheck_assignment(self, statement):
         if statement['Type'] != 'Assignment':
-            raise InvalidStatementType('ERROR: not an assignment')
+            raise InvalidStatementType('not an assignment')
         try:
             var_type = get_var(self.__environments, statement)['LatteType']['TypeName']
             expr_type = self.__eval_expression_type(statement, 'Expr')
             if  var_type != expr_type:
-                self.__errors.append('ERROR: in assignment to %s: invalid type of expression being assigned:\n'
+                self.__errors.append('in assignment to %s: invalid type of expression being assigned:\n'
                     'expected: %s, got: %s, line: %d pos: %d - %d' % (statement['Name'],
                         var_type, expr_type, statement['LineNo'],  statement['StartPos'], statement['EndPos']))
                 return statement
             #else:
             #    get_var(self.__environments, statement)['Assigned'] = statement['Expr']
-            self.__optimizer.simplify_expression(statement, 'Expr')
+            if self.__optimize > 0 and not self.__errors:
+                self.__optimizer.simplify_expression(statement, 'Expr')
         except (VariableUndeclared, InvalidExpression) as e:
             self.__errors.append(e.msg)
         return statement
@@ -254,7 +266,7 @@ class LatteSemanticAnalyzer:
 
     def __typecheck_block(self, statement):
         if statement['Type'] != 'Block':
-            raise InvalidStatementType('ERROR: not a block statement')
+            raise InvalidStatementType('not a block statement')
         self.__push_env()
         new_stmt_list = []
         for internal_statement in statement['Stmts']:
@@ -268,38 +280,41 @@ class LatteSemanticAnalyzer:
 
     def __typecheck_while(self, statement):
         if statement['Type'] != 'WhileLoop':
-            raise InvalidStatementType('ERROR: not a while loop')
+            raise InvalidStatementType('not a while loop')
         try:
             if self.__eval_expression_type(statement, 'Condition') != 'boolean':
-                self.__errors.append('ERROR: in condition of while loop: invalid type of expression,\n'
+                self.__errors.append('in condition of while loop: invalid type of expression,\n'
                     'line: %d, pos: %d - %d' % (statement['LineNo'],\
                         statement['StartPos'], statement['EndPos']))
 
         except (InvalidExpression, VariableUndeclared) as e:
             self.__errors.append(e.msg)
-        self.__optimizer.simplify_expression(statement, 'Condition')
+        if self.__optimize > 0 and not self.__errors:
+            self.__optimizer.simplify_expression(statement, 'Condition')
         self.__push_env()
         statement['Stmt'] = self.__typecheck_statement(statement['Stmt'])
         self.__pop_env()
+        if statement['Condition']['EvalType'] in ('BoolLiteral', 'NumLiteral') and\
+            not statement['Condition']['Value']:
+            return {'Type': 'End', 'Returns': False,
+                        'StartPos': statement['StartPos'], 'EndPos': statement['EndPos']}
         if statement['Stmt']['Returns']:
             statement['Returns'] = True
-        if 'Value' in statement['Condition'].keys() and not statement['Condition']['Value']:
-            return statement['Stmt']
         return statement
 
 
     def __typecheck_var_decl(self, statement):
         if statement['Type'] != 'VariableDecl':
-            raise InvalidStatementType('ERROR: not a variable declaration')
+            raise InvalidStatementType('not a variable declaration')
 
         if statement['LatteType']['TypeName'] == 'void':
-            self.__errors.append('ERROR: in declaration of %s: cannot declare variable of type \'void\', '
+            self.__errors.append('in declaration of %s: cannot declare variable of type \'void\', '
                 'line: %d, pos: %d - %d', (statement['Name'], statement['LineNo'],\
                     statement['StartPos'], statement['EndPos']))
 
         for item in statement['Items']:
             if item['Name'] in self.__environments[-1].keys():
-                self.__errors.append('ERROR: variable %s already declared in this scope, line: %d, pos: %d - %d' %\
+                self.__errors.append('variable %s already declared in this scope, line: %d, pos: %d - %d' %\
                         (item['Name'], item['LineNo'], statement['StartPos'], item['EndPos']))
                 continue
             if item['Assigned']:
@@ -307,7 +322,7 @@ class LatteSemanticAnalyzer:
                     expr_type = self.__eval_expression_type(item, 'Assigned')
                     var_type = statement['LatteType']['TypeName']
                     if  expr_type != var_type:
-                        self.__errors.append('ERROR: in declaration of %s: invalid type of initializer, '
+                        self.__errors.append('in declaration of %s: invalid type of initializer, '
                             'expected: %s, got: %s, line: %d, position: %d - %d' %\
                                 (item['Name'], var_type, expr_type, item['LineNo'],\
                                 item['StartPos'], item['EndPos']))
@@ -316,7 +331,8 @@ class LatteSemanticAnalyzer:
                 except (InvalidExpression, VariableUndeclared) as e:
                     self.__errors.append(e.msg)
                     continue
-                self.__optimizer.simplify_expression(item, 'Assigned')
+                if self.__optimize > 0 and not self.__errors:
+                    self.__optimizer.simplify_expression(item, 'Assigned')
             self.__environments[-1][item['Name']] = item
             item['LatteType'] = statement['LatteType']
         return statement
@@ -324,15 +340,18 @@ class LatteSemanticAnalyzer:
 
     def __typecheck_if_stmt(self, statement):
         if statement['Type'] not in ['IfStmt', 'IfElseStmt']:
-            raise InvalidStatementType('ERROR: not an if statement!')
+            raise InvalidStatementType('not an if statement!')
         try:
             if self.__eval_expression_type(statement, 'Condition') != 'boolean':
-                self.__errors.append('ERROR: in condition of if statement: invalid type of expression,'
+                print statement['Condition']
+                print statement['EvalType']
+                self.__errors.append('in condition of if statement: invalid type of expression,'
                     'line: %d, pos: %d - %d' % (statement['LineNo'],\
                         statement['StartPos'], statement['EndPos']))
         except (InvalidExpression, VariableUndeclared) as e:
             self.__errors.append(e.msg)
-        self.__optimizer.simplify_expression(statement, 'Condition')
+        if self.__optimize > 0 and not self.__errors:
+            self.__optimizer.simplify_expression(statement, 'Condition')
         self.__push_env()
         if statement['Type'] == 'IfStmt':
             statement['Stmt'] = self.__typecheck_statement(statement['Stmt'])
@@ -345,7 +364,6 @@ class LatteSemanticAnalyzer:
         elif statement['Type'] == 'IfElseStmt' and statement['Stmt1']['Returns'] and\
                 statement['Stmt2']['Returns']:
             statement['Returns'] = True
-
         if statement['Condition']['Type'] in ('BoolLiteral', 'NumLiteral') and\
                 statement['Condition']['Value']:
             return statement['Stmt' if statement['Type'] == 'IfStmt' else 'Stmt1']
@@ -375,11 +393,13 @@ class LatteSemanticAnalyzer:
                     if stmt['Returns']:
                         returns = True
                 if not returns:
-                    self.__errors.append('ERROR: function %s declared to return value of type %s '
+                    self.__errors.append('function %s declared to return value of type %s '
                         'returns no value, line: %d, pos: %d - %d' % (function['Name'],
                             function['LatteType']['TypeName'], function['LineNo'],
                             function['StartPos'], function['EndPos']))
             self.__pop_env()
+            if function['Name'] == 'main':
+                function['Name'] = 'main_%d' % MAIN_MANGLING
             new_syntax_tree.append(function)
         self.__syntax_tree = new_syntax_tree
 
@@ -392,14 +412,16 @@ class LatteSemanticAnalyzer:
         self.__environments = []
         self.__errors = []
         self.__optimizer = optimizer
+        self.__logger = Logger()
 
 
-    def analyze(self):
+    def analyze(self, optimize):
+        self.__optimize = optimize
         self.__load_functions()
         self.__typecheck_program()
         if self.__errors:
             for error in  self.__errors:
-                print >> sys.stderr, error
-            print >> sys.stderr, 'ERROR: Semantic analysis failed!'
+                self.__logger.error(error)
+            return False
         else:
-            print 'Semantic analysis successful!'
+            return True

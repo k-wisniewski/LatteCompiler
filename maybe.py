@@ -57,21 +57,33 @@ class Maybe:
     __nonzero__ = __bool__
 
     def __lt__(self, other):
+        if self.value == None or other.value == None:
+            return Maybe(None)
         return Maybe((self.value < other.value))
 
     def __le__(self, other):
+        if self.value == None or other.value == None:
+            return Maybe(None)
         return Maybe((self.value <= other.value))
 
     def __gt__(self, other):
+        if self.value == None or other.value == None:
+            return Maybe(None)
         return Maybe((self.value > other.value))
 
     def __ge__(self, other):
+        if self.value == None or other.value == None:
+            return Maybe(None)
         return Maybe((self.value >= other.value))
 
     def __eq__(self, other):
+        if self.value == None or other.value == None:
+            return Maybe(None)
         return Maybe((self.value == other.value))
 
     def __ne__(self, other):
+        if self.value == None or other.value == None:
+            return Maybe(None)
         return Maybe((self.value != other.value))
 
     def __str__(self):

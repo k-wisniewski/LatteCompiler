@@ -59,7 +59,6 @@ class LatteOptimizer:
 
 
     def __eval_expression_binary(self, expression, parent, key):
-        result = Maybe(None)
         result = self.binOps[expression['Op']['Op']](self.__eval_expression(expression['Left'], expression, 'Left'),
                 self.__eval_expression(expression['Right'], expression, 'Right'))
 
@@ -71,8 +70,9 @@ class LatteOptimizer:
 
         if result.value != None:
             if expression['Op']['MetaType'] == 'ArithmOp':
-                parent[key] = {'Type': 'NumLiteral', 'Value': result.value,
-                    'LineNo': expression['LineNo'], 'StartPos': expression['StartPos'], 'EndPos': expression['EndPos']}
+                parent[key] = {'Type': 'NumLiteral' if expression['Left']['EvalType'] != 'string' else 'StrLiteral',
+                    'Value': result.value, 'LineNo': expression['LineNo'],
+                    'StartPos': expression['StartPos'], 'EndPos': expression['EndPos']}
             else:
                 parent[key] = {'Type': 'BoolLiteral', 'Value': result.value,
                     'LineNo': expression['LineNo'], 'StartPos': expression['StartPos'], 'EndPos': expression['EndPos']}
