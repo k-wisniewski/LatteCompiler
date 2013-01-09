@@ -19,7 +19,7 @@ class LatteSemanticAnalyzer:
         for function in self.__syntax_tree:
             if not function:
                 continue
-            if function['Name'] in self.__functions.keys():
+            if function['Name'] in self.__functions:
                 self.__errors.append('function %s already defined at line %d, \
                         redefined at line: %d' % (function['Name'], \
                         self.__functions['Name']['LineNo'], function['LineNo']))
@@ -42,7 +42,7 @@ class LatteSemanticAnalyzer:
         self.__environments.append({})
         if function:
             for param in function['ListArg']:
-                if param['Name'] in self.__environments[-1].keys():
+                if param['Name'] in self.__environments[-1]:
                     self.__errors.append('repeated argument name %s, in declaration of %s, line: %d, pos: %d - %d' %\
                         (param['Name'], function['Name'], function['LineNo'], function['StartPos'], function['EndPos']))
                     continue
@@ -121,7 +121,7 @@ class LatteSemanticAnalyzer:
 
     def __eval_expression_type_funcall(self, node, key):
         expression = node[key]
-        if expression['Name'] not in self.__functions.keys():
+        if expression['Name'] not in self.__functions:
             raise InvalidExpression('function %s undeclared, line: %d, pos: %d - %d' %\
                     (expression['Name'], expression['LineNo'], expression['StartPos'], expression['EndPos']))
         function = self.__functions[expression['Name']]
@@ -314,7 +314,7 @@ class LatteSemanticAnalyzer:
                     statement['StartPos'], statement['EndPos']))
 
         for item in statement['Items']:
-            if item['Name'] in self.__environments[-1].keys():
+            if item['Name'] in self.__environments[-1]:
                 self.__errors.append('variable %s already declared in this scope, line: %d, pos: %d - %d' %\
                         (item['Name'], item['LineNo'], statement['StartPos'], item['EndPos']))
                 continue
