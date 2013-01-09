@@ -2,17 +2,18 @@
 import getopt
 import os
 import sys
-from subprocess      import call
-from src.parser      import LatteParser
-from src.optimizer   import LatteOptimizer
-from src.typecheck   import LatteSemanticAnalyzer
-from src.jvm_backend import JVM_Backend
-from shared.utils    import Logger, VERSION, BLUE, YELLOW, RST, RED
+from subprocess       import call
+from src.parser       import LatteParser
+from src.optimizer    import LatteOptimizer
+from src.typecheck    import LatteSemanticAnalyzer
+from src.jvm_backend  import JVM_Backend
+from src.llvm_backend import LLVM_Backend
+from shared.utils     import Logger, VERSION, BLUE, YELLOW, RST, RED
 
 
 def usage():
     print YELLOW +\
-        'latc.py <source_file> [-o <output_file>] [-t <target architecture, eg. jvm, llvm>] ' +\
+        'latc.py <source_file> [-o <output_file>] [-t <target architecture jvm, llvm, both>] ' +\
         '[-v] [-O <optimization level>] [-j <jasmin jar file>]' + RST
 
 
@@ -32,7 +33,7 @@ def main(argv=None):
         return -1
 
     output_file = os.path.splitext(input_file)[0] + '.j'
-    target, optimize, jasmin = 'jvm', 1, 'lib/jasmin.jar'
+    target, optimize, jasmin = 'both', 1, 'lib/jasmin.jar'
     logger = Logger()
 
     for opt, arg in opts:
@@ -59,7 +60,7 @@ def main(argv=None):
     logger.log('Target architecure: $CYAN%s$RST' % target)
     logger.log('Optimization level: $CYAN%d (%s)$RST' %\
         (optimize, 'no optimizations' if optimize == 0 else 'simplifying expressions'))
-    if target == 'jvm':
+    if target in ('jvm', 'both'):
         logger.log('Jasmin .jar file:   $CYAN%s$RST' % jasmin)
     try:
         with open(input_file) as input_fd:
@@ -71,8 +72,7 @@ def main(argv=None):
                 semantic_analyzer = LatteSemanticAnalyzer(syntax_tree, optimizer_instance)
                 if semantic_analyzer.analyze(optimize):
                     logger.log('Performing semantic analysis: .....$GREENdone!$RST')
-                    logger.accept()
-                    if target == 'jvm':
+                    if target in ('jvm', 'both'):
                         jvm_backend_instance = JVM_Backend(syntax_tree,
                                 semantic_analyzer.get_functions(),
                                 (os.path.basename(os.path.splitext(input_file)[0]).capitalize()))
@@ -91,7 +91,14 @@ def main(argv=None):
                             call(arg_list, stdout=devnull)
                             print >> sys.stderr, RST
                         logger.log('Generating class file: ............$GREENdone!$RST')
+                        logger.accept()
                         return 0
+                    elif target in ('llvm', 'both'):
+                        llvm_backend_instance = LLVM_Backend(syntax_tree, semantic_analyzer.get_functions())
+                        llvm_backend_instance.generate_llvm(os.path.basename(os.path.splitext(input_file)[0]).capitalize())
+                    else:
+                        logger.error('platform %s is not currently supported' % target)
+                        return -1
                 else:
                     logger.error('Semantic analysis failed')
                     return -1
