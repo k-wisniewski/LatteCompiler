@@ -69,10 +69,10 @@ def main(argv=None):
             optimizer_instance = LatteOptimizer()
             if syntax_tree and parsed:
                 logger.log('Building abstract syntax tree: ....$GREENdone!$RST')
-                semantic_analyzer = LatteSemanticAnalyzer(syntax_tree, optimizer_instance)
-                if semantic_analyzer.analyze(optimize):
-                    logger.log('Performing semantic analysis: .....$GREENdone!$RST')
-                    if target in ('jvm', 'both'):
+                if target in ('jvm', 'both'):
+                    semantic_analyzer = LatteSemanticAnalyzer(syntax_tree, optimizer_instance, 'jvm', logger)
+                    if semantic_analyzer.analyze(optimize):
+                        logger.log('Performing semantic analysis: .....$GREENdone!$RST')
                         jvm_backend_instance = JVM_Backend(syntax_tree,
                                 semantic_analyzer.get_functions(),
                                 (os.path.basename(os.path.splitext(input_file)[0]).capitalize()))
@@ -93,11 +93,15 @@ def main(argv=None):
                         logger.log('Generating class file: ............$GREENdone!$RST')
                         logger.accept()
                         return 0
-                    elif target in ('llvm', 'both'):
-                        llvm_backend_instance = LLVM_Backend(syntax_tree, semantic_analyzer.get_functions())
-                        llvm_backend_instance.generate_llvm(os.path.basename(os.path.splitext(input_file)[0]).capitalize())
+                elif target in ('llvm', 'both'):
+                    semantic_analyzer = LatteSemanticAnalyzer(syntax_tree, optimizer_instance, 'llvm', logger)
+                    if semantic_analyzer.analyze(optimize):
+                        logger.log('Performing semantic analysis: .....$GREENdone!$RST')
+                        llvm_backend_instance = LLVM_Backend(syntax_tree, semantic_analyzer.get_functions(),
+                                os.path.basename(os.path.splitext(input_file)[0]).capitalize())
+                        llvm_backend_instance.generate_llvm()
+                        logger.accept()
                     else:
-                        logger.error('platform %s is not currently supported' % target)
                         return -1
                 else:
                     logger.error('Semantic analysis failed')
