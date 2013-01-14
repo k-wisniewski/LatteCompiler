@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import ply.yacc as yacc
 import sys
 
@@ -15,11 +16,21 @@ class LatteParser:
         'Program : ListTopDef'
         p[0] = p[1]
 
-    def p_TopDef(self, p):
+    def p_TopDef_function(self, p):
         'TopDef : Type ID PAR_L ListArg PAR_R Block'
         p[0] = {'Type': 'FunDecl', 'LineNo': p.lineno(1), 'Name': p[2],
                 'ListArg': p[4], 'Body': p[6], 'LatteType': p[1],
                 'StartPos': p[1]['StartPos'], 'EndPos': p[6]['EndPos']}
+
+    def p_Topdef_class_base(self, p):
+            'TopDef : CLASS ID BR_L ListMembers BR_R'
+            p[0] = {'Type': 'ClassDecl', 'LineNo': p.lineno(1), 'Extends': None,
+                    'Name': p[2], 'Members': p[4], 'StartPos': p.lexspan(1)[0], 'EndPos': p.lexpos(5)}
+
+    def p_Topdef_class_derived(self, p):
+        'TopDef : CLASS ID EXTENDS ID BR_L ListMembers BR_R'
+        p[0] = {'Type': 'ClassDecl', 'Extends': p[4], 'LineNo': p.lineno(1), 'Name': p[2],
+                'Members': p[6], 'StartPos': p.lexspan(1)[0], 'EndPos': p.lexpos(7)}
 
     def p_TopDef_error(self, p):
         'TopDef : ID PAR_L ListArg PAR_R Block'
@@ -58,10 +69,27 @@ class LatteParser:
 
 
     def p_Type(self, p):
-        '''Type : INT
-                | BOOL
-                | STRING
-                | VOID'''
+        '''Type : PrimitiveType
+                | ArrayType
+                | ObjectType'''
+        p[0] = p[1]
+
+    def p_PrimitiveType(self, p):
+        '''PrimitiveType : INT
+                         | BOOL
+                         | STRING
+                         | VOID'''
+        p[0] = {'TypeName': p[1], 'LineNo': p.lineno(1), \
+                'StartPos': p.lexpos(1), 'EndPos': p.lexpos(1) + len(p[1]), 'Returns': False}
+
+    def p_ArrayType(self, p):
+        '''ArrayType : PrimitiveType ARRAY_TYPE_IND
+                     | ObjectType ARRAY_TYPE_IND'''
+        p[0] = {'TypeName': p[1]['TypeName'] + '[]', 'LineNo': p[1]['LineNo'], \
+            'StartPos': p[1]['StartPos'], 'EndPos': p.lexspan(2)[1], 'Returns': False}
+
+    def p_ObjectType(self, p):
+        'ObjectType : ID'
         p[0] = {'TypeName': p[1], 'LineNo': p.lineno(1), \
                 'StartPos': p.lexpos(1), 'EndPos': p.lexpos(1) + len(p[1]), 'Returns': False}
 
@@ -69,6 +97,42 @@ class LatteParser:
         'Block : BR_L ListStmt BR_R'
         p[0] = {'Type': 'Block', 'LineNo': p.lineno(1), 'Stmts': p[2],
                 'StartPos': p.lexpos(1), 'EndPos': p.lexpos(3), 'Returns': False}
+
+    def p_ListMembers_empty(self, p):
+        'ListMembers : empty'
+        p[0] = []
+
+    def p_ListMembers_list(self, p):
+        'ListMembers : ListMembers Member'
+        p[1].append(p[2])
+        p[0] = p[1]
+
+    def p_Member(self, p):
+        '''Member : MethodDecl
+                | FieldDecl'''
+        p[0] = {'Type': 'Member', 'Member': p[1]}
+
+    def p_FieldDecl(self, p):
+        'FieldDecl : Type ListId END_S'
+        p[0] = {'Type': 'FieldDecl', 'LineNo': p.lineno(1), 'LatteType': p[1], 'Ids': p[2],
+                'StartPos': p[1]['StartPos'], 'EndPos': p.lexpos(3), 'Returns': False}
+
+    def p_ListId_empty(self, p):
+        'ListId : ID'
+        p[0] = [p[1]]
+
+    def p_ListId_list(self, p):
+        'ListId : ListId COMMA ID'
+        p[1].append(p[2])
+        p[0] = p[1]
+
+
+    def p_MethodDecl(self, p):
+        'MethodDecl : Type ID PAR_L ListArg PAR_R Block'
+        p[0] = {'Type': 'MethodDecl', 'LineNo': p.lineno(1), 'Name': p[2],
+                'ListArg': p[4], 'Body': p[6], 'LatteType': p[1],
+                'StartPos': p[1]['StartPos'], 'EndPos': p[6]['EndPos']}
+
 
     def p_ListStmt_empty(self, p):
         'ListStmt : empty'
@@ -93,6 +157,17 @@ class LatteParser:
         'Stmt : WHILE PAR_L error PAR_R Stmt'
         self.no_errors = False
         self.logger.error('Syntax error: invalid expression in while loop condition, line: %d, pos: %d' %\
+                (p.lineno(3), p.lexpos(2) + 1))
+
+    def p_Stmt_for(self, p):
+        'Stmt : FOR PAR_L Type ID FOR_COLON ID PAR_R Stmt'
+        p[0] = {'Type': 'ForLoop', 'LineNo': p.lineno(1), 'LoopVar': p[4], 'LoopVarType': p[3],
+                'LoopedOver': p[6], 'Stmt': p[8], 'StartPos': p.lexpos(1), 'EndPos': p[8]['EndPos']}
+
+    def p_Stmt_for_error(self, p):
+        'Stmt : FOR PAR_L error PAR_R Stmt'
+        self.no_errors = False
+        self.logger.error('Syntax error: invalid expression in for loop condition, line: %d, pos: %d' %\
                 (p.lineno(3), p.lexpos(2) + 1))
 
     def p_Stmt_end(self, p):
@@ -131,7 +206,7 @@ class LatteParser:
         p[0] = p[1]
 
     def p_Stmt_assign(self, p):
-        'Stmt : ID ASSIGN Expr END_S'
+        'Stmt : LValue ASSIGN Expr END_S'
         p[0] = {'Type': 'Assignment', 'LineNo': p.lineno(1), 'Name': p[1], 'Expr': p[3],
                 'StartPos': p.lexpos(1), 'EndPos': p.lexpos(4), 'Returns': False}
 
@@ -161,7 +236,6 @@ class LatteParser:
         p[0] = {'Name': p[1], 'Assigned': p[3], 'LineNo': p.lineno(1),
                 'StartPos': p.lexpos(1), 'EndPos': p[3]['EndPos']}
 
-
     def p_ListItem_empty(self, p):
         'ListItem : Item'
         p[0] = [p[1]]
@@ -170,6 +244,21 @@ class LatteParser:
         'ListItem : ListItem COMMA Item'
         p[1].append(p[3])
         p[0] = p[1]
+
+    def p_LValue_var(self, p):
+        'LValue : ID'
+        p[0] = {'Type': 'LVar', 'Name': p[1], 'LineNo': p.lineno(1),
+                'StartPos': p.lexspan(1)[0], 'EndPos': (p.lexspan(1)[1] + len(p[1]))}
+
+    def p_LValue_array(self, p):
+        'LValue : ID SUBSCRIPT_L Expr SUBSCRIPT_R'
+        p[0] = {'Type': 'LArrSubscript', 'Name': p[1], 'Subscript': p[3], 'LineNo': p.lineno(1),
+                'StartPos': p.lexspan(1)[0], 'EndPos': p.lexspan(4)[1]}
+
+    def p_LValue_attribute(self, p):
+        'LValue : ID DOT ID'
+        p[0] = {'Type': 'LAttribute', 'Name': p[3], 'From': p[1], 'LineNo': p.lineno(1),
+                'StartPos': p.lexspan(1)[0], 'EndPos': p.lexspan(3)[1]}
 
     def p_LogOp(self, p):
         '''LogOp : AND
@@ -210,20 +299,51 @@ class LatteParser:
         ('right', 'UnaryOp')
     )
 
+    def p_Expr_num_literal(self, p):
+       'Expr : NUM'
+       p[0] = {'Type': 'NumLiteral', 'Value': p[1], 'LineNo': p.lineno(1),
+            'StartPos': p.lexspan(1)[0], 'EndPos': p.lexspan(1)[1] + len(str(p[1]))}
+
+
     def p_Expr_id(self, p):
         'Expr : ID'
-        p[0] = {'Type':'Var', 'Name':p[1], 'LineNo':p.lineno(1),
-                'StartPos':p.lexspan(1)[0], 'EndPos':(p.lexspan(1)[1] + len(p[1]))}
+        p[0] = {'Type': 'Var', 'Name': p[1], 'LineNo': p.lineno(1),
+                'StartPos': p.lexspan(1)[0], 'EndPos': (p.lexspan(1)[1] + len(p[1]))}
+
+    def p_Expr_new_arr_primitive(self, p):
+        'Expr : NEW PrimitiveType SUBSCRIPT_L Expr SUBSCRIPT_R'
+        p[0] = {'Type': 'NewArrayPrimitive', 'LatteType': p[2], 'Size': p[4], 'LineNo': p.lineno(1),
+                'StartPos': p.lexspan(1)[0], 'EndPos': p.lexspan(5)[1]}
+
+    def p_Expr_new_arr_object(self, p):
+        'Expr : NEW ObjectType SUBSCRIPT_L Expr SUBSCRIPT_R'
+        p[0] = {'Type': 'NewArrayObject', 'LatteType': p[2], 'Size': p[4], 'LineNo': p.lineno(1),
+                'StartPos': p.lexspan(1)[0], 'EndPos': p.lexspan(5)[1]}
+
+    def p_Expr_new_object(self, p):
+        'Expr : NEW ObjectType'
+        p[0] = {'Type': 'NewObject', 'LatteType': p[2], 'LineNo': p.lineno(1),
+                'StartPos': p.lexspan(1)[0], 'EndPos': p[2]['EndPos']}
+
+    def p_Expr_array_subscript(self, p):
+        'Expr : ID SUBSCRIPT_L Expr SUBSCRIPT_R'
+        p[0] = {'Type': 'ArrSubscript', 'Name': p[1], 'Subscript': p[3], 'LineNo': p.lineno(1),
+                'StartPos': p.lexspan(1)[0], 'EndPos': p.lexspan(4)[1]}
+
+    def p_Expr_attribute(self, p):
+        'Expr : ID DOT ID'
+        p[0] = {'Type': 'Attribute', 'Name': p[3], 'From': p[1], 'LineNo': p.lineno(1),
+                'StartPos': p.lexspan(1)[0], 'EndPos': p.lexspan(3)[1]}
+
+    def p_Expr_method_call(self, p):
+        'Expr : ID DOT ID PAR_L ListExpr PAR_R'
+        p[0] = {'Type': 'MethodCall', 'Name': p[3], 'From': p[1], 'ListArg': p[5],
+                'LineNo': p.lineno(1), 'StartPos': p.lexpos(1), 'EndPos': p.lexpos(6)}
 
     def p_Expr_bool_literal(self, p):
         '''Expr : TRUE
                 | FALSE'''
         p[0] = {'Type': 'BoolLiteral', 'Value': True if p[1] == 'true' else False, 'LineNo': p.lineno(1),
-            'StartPos': p.lexspan(1)[0], 'EndPos': p.lexspan(1)[1] + len(str(p[1]))}
-
-    def p_Expr_num_literal(self, p):
-       'Expr : NUM'
-       p[0] = {'Type': 'NumLiteral', 'Value': p[1], 'LineNo': p.lineno(1),
             'StartPos': p.lexspan(1)[0], 'EndPos': p.lexspan(1)[1] + len(str(p[1]))}
 
     def p_Expr_str_literal(self, p):
@@ -235,7 +355,7 @@ class LatteParser:
         'Expr : PAR_L Expr PAR_R'
         p[0] = p[2]
 
-    def p_Expr_funcall(self, p):
+    def p_Expr_function_call(self, p):
         '''Expr : ID PAR_L ListExpr PAR_R'''
         p[0] = {'Type': 'FunCall', 'Name': p[1], 'ListArg': p[3], 'LineNo': p.lineno(1),
                 'StartPos': p.lexpos(1), 'EndPos': p.lexpos(4)}
@@ -253,6 +373,15 @@ class LatteParser:
         p[0] = {'Type': 'BinaryOp', 'Left': p[1], 'Op': p[2], 'Right': p[3],
                 'LineNo': p.lineno(1), 'StartPos': p[1]['StartPos'], 'EndPos': p[3]['EndPos']}
 
+    def p_Expr_cast(self, p):
+        'Expr : CAST LESS Type GT PAR_L Expr PAR_R'
+        p[0] = {'Type': 'Cast', 'ToLatteType': p[3], 'Expr': p[6], 'LineNo': p.lineno(1),
+                'StartPos': p.lexspan(1)[0], 'EndPos': p.lexpos(7)}
+
+    def p_Expr_null(self, p):
+        'Expr : NULL'
+        p[0] = {'Type': 'Null', 'LineNo': p.lineno(1), 'StartPos': p.lexspan(1)[0], 'EndPos': p.lexspan(1)[1]}
+
     def p_ListExpr_empty(self, p):
         'ListExpr : empty'
         p[0]= []
@@ -266,17 +395,17 @@ class LatteParser:
         p[1].append(p[3])
         p[0] = p[1]
 
-    def __init__(self):
+    def __init__(self, logger):
         self.lexer = LatteLexer().build()
+        self.logger = logger
         self.parser = yacc.yacc(module=self, debug=True, start='Program')
-        self.logger = Logger()
         self.no_errors = True
 
     def parse(self, source):
         return yacc.parse(source, tracking=True, debug=0, lexer=self.lexer), self.no_errors
 
 if __name__ == "__main__":
-    p = LatteParser()
+    p = LatteParser(Logger())
     fd = open(sys.argv[1])
     print p.parse(fd.read())
 

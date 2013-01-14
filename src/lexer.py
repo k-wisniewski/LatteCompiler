@@ -2,14 +2,18 @@ import ply.lex as lex
 import sys
 
 class LatteLexer():
-    # Token list:
     tokens = [
         'COMMENT',
         'NUM',
         'ID',
         'PAR_L',
         'PAR_R',
+        'NEW',
+        'SUBSCRIPT_L',
+        'SUBSCRIPT_R',
+        'ARRAY_TYPE_IND',
         'COMMA',
+        'DOT',
         'BR_L',
         'BR_R',
         'END_S',
@@ -40,28 +44,44 @@ class LatteLexer():
         'TRUE',
         'VOID',
         'WHILE',
-        'LITSTR'
+        'FOR',
+        'FOR_COLON',
+        'LITSTR',
+        'CLASS',
+        'CAST',
+        'NULL',
+        'EXTENDS'
     ]
 
     reserved = {
         'if': 'IF',
         'else': 'ELSE',
         'while': 'WHILE',
+        'for' : 'FOR',
         'return': 'RET',
+        'new': 'NEW',
         'boolean': 'BOOL',
         'int': 'INT',
         'string': 'STRING',
         'void': 'VOID',
         'true': 'TRUE',
-        'false': 'FALSE'
+        'false': 'FALSE',
+        'class': 'CLASS',
+        'cast': 'CAST',
+        'null': 'NULL',
+        'extends': 'EXTENDS'
     }
 
-    # Patterns for tokensPatterns for tokens::
     t_PAR_L = r'\('
     t_PAR_R = r'\)'
+    t_ARRAY_TYPE_IND = r'\[\]'
+    t_SUBSCRIPT_L = r'\['
+    t_SUBSCRIPT_R = r'\]'
     t_COMMA = r'\,'
     t_BR_L = r'\{'
     t_BR_R = r'\}'
+    t_DOT = r'\.'
+    t_FOR_COLON = r':'
     t_END_S = r'\;'
     t_ASSIGN = r'\='
     t_INC = r'\+\+'
@@ -109,10 +129,8 @@ class LatteLexer():
         r'\n+'
         t.lexer.lineno += len(t.value)
 
-    # A string containing ignored characters (spaces and tabs)
     t_ignore  = ' \t'
 
-    # Error handling rule
     def t_error(self, t):
         print >> sys.stderr, "Illegal character '%s' at line: %d" % (t.value[0], t.lexer.lineno)
         t.lexer.skip(1)
