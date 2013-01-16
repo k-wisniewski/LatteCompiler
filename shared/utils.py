@@ -57,10 +57,50 @@ class Logger:
             print "OK"
 
 
-def get_var(environments, node):
+def get_var(environments, node, class_envs=None, current_class=None):
     for env in reversed(environments):
-        if node['Name'] in env.keys():
+        if node['Name'] in env:
             return env[node['Name']]
+
+    if class_envs and current_class:
+        class_name = current_class['Name']
+        while True:
+            if node['Name'] in class_envs[class_name].attributes:
+                return class_envs[class_name].attributes[node['Name']]
+            if not class_envs[class_name].extends:
+                break
+            class_name = class_envs[class_name].extends
+
     raise VariableUndeclared('Variable %s is undeclared, line: %d, pos: %d - %d' %
             (node['Name'], node['LineNo'], node['StartPos'], node['EndPos']))
+
+
+def get_function(node, functions, class_envs=None, current_class=None):
+    if current_class and class_envs and node['Name'] in class_envs[current_class['Name']].methods:
+        return [current_class['Name']]
+    elif node['Name'] in functions:
+        return functions[node['Name']]
+    else:
+        raise InvalidExpression('function %s undeclared, line: %d, pos: %d - %d' %\
+                (node['Name'], node['LineNo'], node['StartPos'], node['EndPos']))
+
+
+def is_a(type1, meta_type1, type2, meta_type2, class_envs):
+    if type1 != 'null' and meta_type1 != meta_type2:
+        return False
+    if type1 != 'null' and meta_type1 in ('Primitive', 'Array'):
+        return type1 == type2
+    if type1 != 'null' and meta_type2 == 'Class':
+        class_name = type1
+        while class_name:
+            if class_name == type2:
+                return True
+            class_name = class_envs[class_name].extends
+    if type1 == 'null' and meta_type2 == 'Class':
+        return True
+    return False
+
+
+
+
 

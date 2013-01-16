@@ -79,18 +79,18 @@ class LatteParser:
                          | BOOL
                          | STRING
                          | VOID'''
-        p[0] = {'TypeName': p[1], 'LineNo': p.lineno(1), \
+        p[0] = {'TypeName': p[1], 'LineNo': p.lineno(1), 'MetaType': 'Primitive',
                 'StartPos': p.lexpos(1), 'EndPos': p.lexpos(1) + len(p[1]), 'Returns': False}
 
     def p_ArrayType(self, p):
         '''ArrayType : PrimitiveType ARRAY_TYPE_IND
                      | ObjectType ARRAY_TYPE_IND'''
-        p[0] = {'TypeName': p[1]['TypeName'] + '[]', 'LineNo': p[1]['LineNo'], \
+        p[0] = {'TypeName': p[1]['TypeName'], 'LineNo': p[1]['LineNo'], 'MetaType': 'Array',
             'StartPos': p[1]['StartPos'], 'EndPos': p.lexspan(2)[1], 'Returns': False}
 
     def p_ObjectType(self, p):
         'ObjectType : ID'
-        p[0] = {'TypeName': p[1], 'LineNo': p.lineno(1), \
+        p[0] = {'TypeName': p[1], 'LineNo': p.lineno(1), 'MetaType': 'Class',
                 'StartPos': p.lexpos(1), 'EndPos': p.lexpos(1) + len(p[1]), 'Returns': False}
 
     def p_Block(self, p):
@@ -110,7 +110,7 @@ class LatteParser:
     def p_Member(self, p):
         '''Member : MethodDecl
                 | FieldDecl'''
-        p[0] = {'Type': 'Member', 'Member': p[1]}
+        p[0] = p[1]
 
     def p_FieldDecl(self, p):
         'FieldDecl : Type ListId END_S'
@@ -161,8 +161,10 @@ class LatteParser:
 
     def p_Stmt_for(self, p):
         'Stmt : FOR PAR_L Type ID FOR_COLON ID PAR_R Stmt'
-        p[0] = {'Type': 'ForLoop', 'LineNo': p.lineno(1), 'LoopVar': p[4], 'LoopVarType': p[3],
-                'LoopedOver': p[6], 'Stmt': p[8], 'StartPos': p.lexpos(1), 'EndPos': p[8]['EndPos']}
+        tmp = {'Type': 'VariableDecl', 'LineNo': p.lineno(1), 'LatteType': p[3], 'Items': p[2],
+                'StartPos': p[3]['StartPos'], 'EndPos': p.lexspan(4)[1], 'Returns': False}
+        p[0] = {'Type': 'ForLoop', 'LineNo': p.lineno(1), 'LoopVar': tmp, 'LoopedOver': p[6], 'Stmt': p[8],
+                'StartPos': p.lexpos(1), 'EndPos': p[8]['EndPos']}
 
     def p_Stmt_for_error(self, p):
         'Stmt : FOR PAR_L error PAR_R Stmt'
@@ -207,13 +209,13 @@ class LatteParser:
 
     def p_Stmt_assign(self, p):
         'Stmt : LValue ASSIGN Expr END_S'
-        p[0] = {'Type': 'Assignment', 'LineNo': p.lineno(1), 'Name': p[1], 'Expr': p[3],
+        p[0] = {'Type': 'Assignment', 'LineNo': p.lineno(1), 'LValue': p[1], 'Expr': p[3],
                 'StartPos': p.lexpos(1), 'EndPos': p.lexpos(4), 'Returns': False}
 
     def p_Stmt_inc_dec(self, p):
-        '''Stmt : ID INC END_S
-              | ID DEC END_S'''
-        p[0] = {'Type': 'IncDec', 'LineNo': p.lineno(1), 'Name': p[1], 'Op': p[2],
+        '''Stmt : LValue INC END_S
+              | LValue DEC END_S'''
+        p[0] = {'Type': 'IncDec', 'LineNo': p.lineno(1), 'LValue': p[1], 'Op': p[2],
                 'StartPos': p.lexpos(1), 'EndPos': p.lexpos(3), 'Returns': False}
 
     def p_Stmt_ret(self, p):
@@ -257,7 +259,7 @@ class LatteParser:
 
     def p_LValue_attribute(self, p):
         'LValue : ID DOT ID'
-        p[0] = {'Type': 'LAttribute', 'Name': p[3], 'From': p[1], 'LineNo': p.lineno(1),
+        p[0] = {'Type': 'LAttribute', 'Name': p[1], 'Attr': p[3], 'LineNo': p.lineno(1),
                 'StartPos': p.lexspan(1)[0], 'EndPos': p.lexspan(3)[1]}
 
     def p_LogOp(self, p):
@@ -332,7 +334,7 @@ class LatteParser:
 
     def p_Expr_attribute(self, p):
         'Expr : ID DOT ID'
-        p[0] = {'Type': 'Attribute', 'Name': p[3], 'From': p[1], 'LineNo': p.lineno(1),
+        p[0] = {'Type': 'Attribute', 'Name': p[1], 'Attr': p[3], 'LineNo': p.lineno(1),
                 'StartPos': p.lexspan(1)[0], 'EndPos': p.lexspan(3)[1]}
 
     def p_Expr_method_call(self, p):
