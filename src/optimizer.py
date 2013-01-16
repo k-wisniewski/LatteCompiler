@@ -70,12 +70,12 @@ class LatteOptimizer:
 
         if result.value != None:
             if expression['Op']['MetaType'] == 'ArithmOp':
-                print expression['Left']
                 parent[key] = {'Type': 'NumLiteral' if expression['Left']['EvalType'] != 'string' else 'StrLiteral',
                     'Value': result.value, 'LineNo': expression['LineNo'],
-                    'StartPos': expression['StartPos'], 'EndPos': expression['EndPos']}
+                    'StartPos': expression['StartPos'], 'EndPos': expression['EndPos'],
+                    'EvalType': expression['Left']['EvalType']}
             else:
-                parent[key] = {'Type': 'BoolLiteral', 'Value': result.value,
+                parent[key] = {'Type': 'BoolLiteral', 'Value': result.value, 'EvalType': 'boolean',
                     'LineNo': expression['LineNo'], 'StartPos': expression['StartPos'], 'EndPos': expression['EndPos']}
         return result
 
