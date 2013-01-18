@@ -23,14 +23,14 @@ class LatteOptimizer:
         if expression['Op']['Op'] == '-':
             result = -(self.__eval_expression(expression['Arg'], expression, 'Arg'))
             if result:
-                parent[key] = {'Type': 'NumLiteral', 'Value': result.value,
+                parent[key] = {'Type': 'NumLiteral', 'Value': result.value, 'EvalType': 'boolean', 'EvalMetaType': 'Primitive',
                     'LineNo': expression['LineNo'], 'StartPos': expression['StartPos'], 'EndPos': expression['EndPos']}
             return result
         elif expression['Op']['Op'] == '!':
             result = self.__eval_expression(expression['Arg'], expression, 'Arg')
             if result:
                 result = not result
-                parent[key] = {'Type': 'BoolLiteral', 'Value': result.value,
+                parent[key] = {'Type': 'BoolLiteral', 'Value': result.value, 'EvalType': 'boolean', 'EvalMetaType': 'Primitive',
                     'LineNo': expression['LineNo'], 'StartPos': expression['StartPos'], 'EndPos': expression['EndPos']}
             return result
 
@@ -73,21 +73,22 @@ class LatteOptimizer:
                 parent[key] = {'Type': 'NumLiteral' if expression['Left']['EvalType'] != 'string' else 'StrLiteral',
                     'Value': result.value, 'LineNo': expression['LineNo'],
                     'StartPos': expression['StartPos'], 'EndPos': expression['EndPos'],
-                    'EvalType': expression['Left']['EvalType']}
+                    'EvalType': expression['Left']['EvalType'],
+                    'EvalMetaType': 'Primitive'}
             else:
-                parent[key] = {'Type': 'BoolLiteral', 'Value': result.value, 'EvalType': 'boolean',
+                parent[key] = {'Type': 'BoolLiteral', 'Value': result.value, 'EvalType': 'boolean', 'EvalMetaType': 'Primitive',
                     'LineNo': expression['LineNo'], 'StartPos': expression['StartPos'], 'EndPos': expression['EndPos']}
         return result
 
 
     def __eval_expression(self, expression, parent, key):
-        if expression['Type'] in ['NumLiteral', 'BoolLiteral', 'StrLiteral']:
+        if expression['Type'] in ('NumLiteral', 'BoolLiteral', 'StrLiteral'):
             return Maybe(expression['Value'])
         elif expression['Type'] == 'UnaryOp':
             return self.__eval_expression_unary(expression, parent, key)
         elif expression['Type'] == 'BinaryOp':
             return self.__eval_expression_binary(expression, parent, key)
-        elif expression['Type'] in ['Var', 'FunCall']:
+        else:
             return Maybe(None)
 
 
