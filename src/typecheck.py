@@ -37,22 +37,22 @@ class LatteSemanticAnalyzer:
 
     def __load_classes(self):
         for class_ in (top_def for top_def in self.__syntax_tree if top_def['Type'] == 'ClassDecl'):
-            self.__class_envs[class_['Name']] = ClassEnv()
-            self.__class_envs[class_['Name']].methods = \
+            self.__class_meta[class_['Name']] = ClassEnv()
+            self.__class_meta[class_['Name']].methods = \
                     {member['Name']: member for member in class_['Members'] if member['Type'] == 'MethodDecl'}
             for member in filter(lambda member: member['Type'] == 'FieldDecl', class_['Members']):
                 for item in member['Items']:
                     item['LatteType'] = member['LatteType']
-                    self.__class_envs[class_['Name']].attributes[item['Name']] = item
+                    self.__class_meta[class_['Name']].attributes[item['Name']] = item
 
 
     def __get_var_type(self, statement):
         if statement['LValue']['Type'] == 'LVar':
             variable = get_var(self.__function_envs, statement['LValue'],
-                    self.__class_envs, self.__current_class)
+                    self.__class_meta, self.__current_class)
         elif statement['LValue']['Type'] == 'LArrSubscript':
             variable = get_var(self.__function_envs, statement['LValue'],
-                    self.__class_envs, self.__current_class)
+                    self.__class_meta, self.__current_class)
             subscript_type, meta_type = self.__eval_expression_type(statement['LValue'], 'Subscript')
             if subscript_type != 'int' and meta_type != 'Primitive':
                 self.__errors.append('array indices must be integers, not %s%s, line: %d, pos: %d - %d' %
@@ -64,9 +64,9 @@ class LatteSemanticAnalyzer:
             return variable['LatteType']['TypeName'], var_meta_type
         elif statement['LValue']['Type'] == 'LAttribute':
             variable = get_var(self.__function_envs, statement['LValue'],
-                    self.__class_envs, self.__current_function)
+                    self.__class_meta, self.__current_function)
             attr = statement['LValue']['Attr']
-            class_env = self.__class_envs[variable['LatteType']['TypeName']]
+            class_env = self.__class_meta[variable['LatteType']['TypeName']]
             if variable['LatteType']['MetaType'] != 'Class':
                 self.__errors.append('arrays and primitive types don\'t have l-value attributes, line %d, pos: %d - %d' %
                     (statement['LineNo'], statement['StartPos'], statement['EndPos']))
@@ -103,13 +103,13 @@ class LatteSemanticAnalyzer:
         previous = class_['Extends']
         counter = 1
         while current:
-            if self.__class_envs[current].extends:
-                current = self.__class_envs[current].extends
+            if self.__class_meta[current].extends:
+                current = self.__class_meta[current].extends
             else:
                 return False
             counter += 1
-            if counter % 2 and self.__class_envs[previous]:
-                previous = self.__class_envs[previous].extends
+            if counter % 2 and self.__class_meta[previous]:
+                previous = self.__class_meta[previous].extends
             if current == previous:
                 return True
         return False
@@ -218,7 +218,7 @@ class LatteSemanticAnalyzer:
         for index, (arg_expected, arg_provided) in enumerate(zip(function['ListArg'], expression['ListArg'])):
             expr_type, meta_type = self.__eval_expression_type(expression['ListArg'], index)
             if not is_a(expr_type, meta_type, arg_expected['LatteType']['TypeName'],
-                    arg_expected['LatteType']['MetaType'], self.__class_envs):
+                    arg_expected['LatteType']['MetaType'], self.__class_meta):
                 raise InvalidExpression('in a call to function %s: expected: %s, got: %s, '
                     'line: %d, pos %d - %d' % (function['Name'], arg_expected['LatteType']['TypeName'],
                             expr_type, expression['LineNo'], expression['StartPos'], expression['EndPos']))
@@ -230,7 +230,7 @@ class LatteSemanticAnalyzer:
 
     def __eval_expression_type_fun_call(self, node, key):
         expression = node[key]
-        function = get_function(expression, self.__functions, self.__class_envs, self.__current_class)
+        function = get_function(expression, self.__functions, self.__class_meta, self.__current_class)
         self.__eval_fun_call(expression, function)
         node[key]['EvalType'] = function['LatteType']['TypeName']
         node[key]['EvalType'] = function['LatteType']['MetaType']
@@ -238,7 +238,7 @@ class LatteSemanticAnalyzer:
 
 
     def __eval_expression_var(self, node, key):
-        var_type = get_var(self.__function_envs, node[key], self.__class_envs, self.__current_class)['LatteType']
+        var_type = get_var(self.__function_envs, node[key], self.__class_meta, self.__current_class)['LatteType']
         node[key]['EvalType'] = var_type['TypeName']
         node[key]['EvalMetaType'] = var_type['MetaType']
         return var_type['TypeName'], var_type['MetaType']
@@ -265,7 +265,7 @@ class LatteSemanticAnalyzer:
     def __eval_expression_type_attribute(self, node, key):
         expression = node[key]
         type_ = get_var(self.__function_envs, expression,
-                self.__class_envs, self.__current_class)['LatteType']
+                self.__class_meta, self.__current_class)['LatteType']
         if type_['MetaType'] == 'Array':
             if expression['Attr'] != 'length':
                 raise InvalidExpression('invalid attribute: arrays have only length, line: %d, pos: %d - %d' %
@@ -274,8 +274,8 @@ class LatteSemanticAnalyzer:
             node[key]['EvalMetaType'] = 'Primitive'
             return 'int', 'Primitive'
         type_name = type_['TypeName']
-        attr = self.__class_envs[type_name].attributes[expression['Attr']]
-        if not is_member(expression['Attr'], self.__class_envs, type_name):
+        attr = self.__class_meta[type_name].attributes[expression['Attr']]
+        if not is_member(expression['Attr'], self.__class_meta, type_name):
             raise InvalidExpression('%s is not member of class %d, line: %d, pos: %d - %d' %
                     (expression['Attr'], type_name, expression['LineNo'],
                         expression['StartPos'], expression['EndPos']))
@@ -287,8 +287,8 @@ class LatteSemanticAnalyzer:
     def __eval_expression_type_method_call(self, node, key):
         expression = node[key]
         class_name = get_var(self.__function_envs, expression,
-                self.__class_envs, self.__current_class)['LatteType']['TypeName']
-        method = get_member(expression['Method'], self.__class_envs, class_name, True)
+                self.__class_meta, self.__current_class)['LatteType']['TypeName']
+        method = get_member(expression['Method'], self.__class_meta, class_name, True)
         if not method:
             raise InvalidExpression('undeclared method %s in type %s, line: %d, pos: %d - %d' %
                     (expression['Method'], class_name, expression['LineNo'],
@@ -304,7 +304,7 @@ class LatteSemanticAnalyzer:
         expression = node[key]
         expr_type, meta_type = self.__eval_expression_type(expression, 'Expr')
         if not is_a(expr_type, meta_type, expression['ToLatteType']['TypeName'],
-                expression['ToLatteType']['MetaType'], self.__class_envs):
+                expression['ToLatteType']['MetaType'], self.__class_meta):
             raise InvalidExpression('classes can only be casted up in the class hierarchy, line: %d, pos: %d - %d' %
                     (expression['LineNo'], expression['StartPos'], expression['EndPos']))
         node[key]['EvalType'] = expression['ToLatteType']['TypeName']
@@ -320,7 +320,7 @@ class LatteSemanticAnalyzer:
 
     def __eval_expression_type_arr_subscript(self, node, key):
         expression = node[key]
-        array_ = get_var(self.__function_envs, expression, self.__class_envs, self.__current_class)
+        array_ = get_var(self.__function_envs, expression, self.__class_meta, self.__current_class)
         if array_['LatteType']['MetaType'] != 'Array':
             raise InvalidExpression('subscripts can only be applied to arrays, line: %d, pos: %d - %d' %
                     (expression['LineNo'], expression['StartPos'], expression['EndPos']))
@@ -401,7 +401,7 @@ class LatteSemanticAnalyzer:
                             statement['LineNo'], statement['StartPos'], statement['EndPos']))
                 return statement;
             if expr_type and not is_a(expr_type, meta_type, self.__current_function['LatteType']['TypeName'],
-                    self.__current_function['LatteType']['MetaType'], self.__class_envs):
+                    self.__current_function['LatteType']['MetaType'], self.__class_meta):
                 self.__errors.append('in return statement: returning value of type %s '
                     'in a function declared to return type %s, line: %d, pos: %d - %d' %\
                         (expr_type, self.__current_function['LatteType']['TypeName'],\
@@ -446,7 +446,7 @@ class LatteSemanticAnalyzer:
                     statement['Expr']['Type'] not in ('NewArrayObject', 'NewArrayPrimitive'):
                 self.__errors.append('array can only be assigned with newly created object, line: %d, pos %d - %d' %
                     (statement['LineNo'], statement['StartPos'], statement['EndPos']))
-            if not is_a(expr_type, meta_type, var_type, var_meta_type, self.__class_envs):
+            if not is_a(expr_type, meta_type, var_type, var_meta_type, self.__class_meta):
                 self.__errors.append('in assignment to %s: invalid type of expression being assigned:\n'
                     'expected: %s%s, got: %s%s, line: %d pos: %d - %d' % (statement['LValue']['Name'],
                         var_type, self.__arr(var_meta_type), expr_type, self.__arr(meta_type),
@@ -503,7 +503,7 @@ class LatteSemanticAnalyzer:
     def __typecheck_for(self, statement):
         if statement['Type'] != 'ForLoop':
             raise InvalidStatementType('not a for loop')
-        looped_over = get_var(self.__function_envs, statement, self.__class_envs, self.__current_class)
+        looped_over = get_var(self.__function_envs, statement, self.__class_meta, self.__current_class)
         if looped_over['LatteType']['MetaType'] != 'Array':
             self.__errors.append('cannot iterate over %s: not an array type, line: %s, pos: %d - %d' %
                 (looped_over['LatteType']['TypeName'], looped_over['LineNo'],
@@ -544,7 +544,7 @@ class LatteSemanticAnalyzer:
                     expr_type, meta_type = self.__eval_expression_type(item, 'Assigned')
                     var_type = statement['LatteType']['TypeName']
                     var_meta_type = statement['LatteType']['MetaType']
-                    if  not is_a(expr_type, meta_type, var_type, var_meta_type, self.__class_envs):
+                    if  not is_a(expr_type, meta_type, var_type, var_meta_type, self.__class_meta):
                         self.__errors.append('in declaration of %s: invalid type of initializer, '
                             'expected: %s%s, got: %s%s, line: %d, position: %d - %d' %
                                 (item['Name'], var_type, self.__arr(var_meta_type), expr_type,
@@ -614,7 +614,7 @@ class LatteSemanticAnalyzer:
     def __typecheck_statement(self, statement):
         if statement['Type'] == 'VariableDecl':
             return self.__typecheck_var_decl(statement)
-        elif statement['Type'] in ['IfStmt', 'IfElseStmt']:
+        elif statement['Type'] in ('IfStmt', 'IfElseStmt'):
             return self.__typecheck_if_stmt(statement)
         elif statement['Type'] == 'WhileLoop':
             return self.__typecheck_while(statement)
@@ -657,17 +657,18 @@ class LatteSemanticAnalyzer:
     def __typecheck_member(self, member):
         if member['Type'] == 'MethodDecl':
             return self.__typecheck_function(member)
+        return member
 
 
     def __typecheck_class(self, class_):
         self.__current_class = class_
-        if class_['Extends'] in self.__class_envs:
+        if class_['Extends'] in self.__class_meta:
             if self.__find_cycle(class_):
                 self.__errors.append('There\'s a cycle in class hierarchy! Class %s cannot extend class %s,'
                         ' line: %d, pos: %d - %d' % (class_['Name'], class_['Extends'],
                             class_['LineNo'], class_['StartPos'], class_['EndPos']))
                 return class_
-            self.__class_envs[class_['Name']].extends = class_['Extends']
+            self.__class_meta[class_['Name']].extends = class_['Extends']
         elif class_['Extends']:
             self.__errors.append('class %s extends non-existent class %s, line: %d, pos: %d - %d' %
                     (class_['Name'], class_['Extends'], class_['LineNo'],
@@ -693,11 +694,14 @@ class LatteSemanticAnalyzer:
     def get_functions(self):
         return self.__functions
 
+    def get_class_meta(self):
+        return self.__class_meta
+
     def __init__(self, syntax_tree, optimizer, target, logger):
         self.__syntax_tree = syntax_tree
         self.__functions = {}
         self.__function_envs = []
-        self.__class_envs = {}
+        self.__class_meta = {}
         self.__errors = []
         self.__optimizer = optimizer
         self.__current_class = None
