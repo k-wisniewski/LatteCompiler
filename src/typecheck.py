@@ -37,12 +37,16 @@ class LatteSemanticAnalyzer:
 
     def __load_classes(self):
         for class_ in (top_def for top_def in self.__syntax_tree if top_def['Type'] == 'ClassDecl'):
+            self.__classes.append(class_['Name'])
             self.__class_meta[class_['Name']] = ClassEnv()
             self.__class_meta[class_['Name']].methods = \
                     {member['Name']: member for member in class_['Members'] if member['Type'] == 'MethodDecl'}
             for member in filter(lambda member: member['Type'] == 'FieldDecl', class_['Members']):
                 for item in member['Items']:
                     item['LatteType'] = member['LatteType']
+                    if item['Name'] in self.__class_meta[class_['Name']].attributes:
+                        self.__errors.append('redeclaration of attribute %s, line: %d, pos: %d - %d' %
+                                (item['Name'], item['LineNo'], item['StartPos'], item['EndPos']))
                     self.__class_meta[class_['Name']].attributes[item['Name']] = item
 
 
@@ -534,6 +538,10 @@ class LatteSemanticAnalyzer:
                 'line: %d, pos: %d - %d', (statement['Name'], statement['LineNo'],\
                     statement['StartPos'], statement['EndPos']))
 
+        if statement['LatteType']['TypeName'] not in PRIMITIVES and\
+                statement['LatteType']['TypeName'] not in self.__class_meta:
+            self.__errors.append('Type %s undeclared, line: %d, pos: %d - %d' %
+                    (statement['LatteType']['TypeName'], statement['LineNo'], statement['StartPos'], statement['EndPos']))
         for item in statement['Items']:
             if statement['Type'] == 'VariableDecl' and item['Name'] in self.__function_envs[-1]:
                 self.__errors.append('variable %s already declared in this scope, line: %d, pos: %d - %d' %\
@@ -544,7 +552,8 @@ class LatteSemanticAnalyzer:
                     expr_type, meta_type = self.__eval_expression_type(item, 'Assigned')
                     var_type = statement['LatteType']['TypeName']
                     var_meta_type = statement['LatteType']['MetaType']
-                    if  not is_a(expr_type, meta_type, var_type, var_meta_type, self.__class_meta):
+
+                    if  not is_a(var_type, meta_type, var_type, var_meta_type, self.__class_meta):
                         self.__errors.append('in declaration of %s: invalid type of initializer, '
                             'expected: %s%s, got: %s%s, line: %d, position: %d - %d' %
                                 (item['Name'], var_type, self.__arr(var_meta_type), expr_type,
@@ -654,7 +663,7 @@ class LatteSemanticAnalyzer:
         return function
 
 
-    def __typecheck_member(self, member):
+    def __typecheck_member(self, member, class_):
         if member['Type'] == 'MethodDecl':
             return self.__typecheck_function(member)
         return member
@@ -663,18 +672,18 @@ class LatteSemanticAnalyzer:
     def __typecheck_class(self, class_):
         self.__current_class = class_
         if class_['Extends'] in self.__class_meta:
+            self.__class_meta[class_['Name']].extends = class_['Extends']
             if self.__find_cycle(class_):
                 self.__errors.append('There\'s a cycle in class hierarchy! Class %s cannot extend class %s,'
                         ' line: %d, pos: %d - %d' % (class_['Name'], class_['Extends'],
                             class_['LineNo'], class_['StartPos'], class_['EndPos']))
                 return class_
-            self.__class_meta[class_['Name']].extends = class_['Extends']
         elif class_['Extends']:
             self.__errors.append('class %s extends non-existent class %s, line: %d, pos: %d - %d' %
                     (class_['Name'], class_['Extends'], class_['LineNo'],
                         class_['StartPos'], class_['EndPos']))
         class_['Members'] =\
-            [self.__typecheck_member(member) for member in class_['Members']]
+            [self.__typecheck_member(member, class_) for member in class_['Members']]
         self.__current_class = None
         return class_
 
@@ -702,6 +711,7 @@ class LatteSemanticAnalyzer:
         self.__functions = {}
         self.__function_envs = []
         self.__class_meta = {}
+        self.__classes = []
         self.__errors = []
         self.__optimizer = optimizer
         self.__current_class = None
