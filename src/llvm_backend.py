@@ -557,7 +557,7 @@ class LLVM_Backend:
             string.linkage = LINKAGE_INTERNAL
             return string.gep((Constant.int(Type.int(), 0), Constant.int(Type.int(), 0)))
         else:
-            return Constant.null(Type.int(SIZEOF_BYTE))
+            return Constant.null(Type.pointer(self.__class_structs[object_['LatteType']['TypeName']]))
 
 
     def gen_class_ctor(self, class_):
@@ -663,10 +663,9 @@ class LLVM_Backend:
     def generate_llvm(self):
         for class_ in self.__classes:
             self.gen_class_struct(class_)
-        print 'OK'
+
         for class_ in self.__classes:
             self.gen_class_ctor(class_)
-
 
         for function_name, function in (x for x in self.__functions.iteritems() if x[0] not in BUILTINS_INFO):
             self.current_function_ast = function
@@ -693,4 +692,4 @@ class LLVM_Backend:
                 self.__llvm_builder.ret_void()
             self.current_function_llvm.verify()
             self.__pop_env()
-        #print self.__module
+        print self.__module
