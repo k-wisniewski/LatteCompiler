@@ -176,11 +176,7 @@ class LatteParser:
 
     def p_Stmt_for(self, p):
         'Stmt : FOR PAR_L Type ID FOR_COLON ID PAR_R Stmt'
-        tmp_index = {'Type': 'NumLiteral', 'Value': 0, 'LineNo': -3, 'StartPos': -3,
-                'EndPos': -3,'Returns': False}
-        item_assigned = {'Type': 'ArrSubscript', 'Name': p[6], 'Subscript': tmp_index, 'LineNo': -3,
-                'StartPos': -2, 'EndPos': -2, 'Returns': False}
-        variable_item = {'Name': p[4], 'Assigned': item_assigned, 'LineNo': p.lineno(1),
+        variable_item = {'Name': p[4], 'Assigned': None, 'LineNo': p.lineno(1),
                 'StartPos': -1, 'EndPos': -1, 'Returns': False}
         variable = {'Type': 'VariableDecl', 'LineNo': p.lineno(1), 'LatteType': p[3], 'Items': [variable_item], 'Name': p[4],
                 'StartPos': p[3]['StartPos'], 'EndPos': p.lexspan(4)[1], 'Returns': False}

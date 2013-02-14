@@ -4,6 +4,7 @@ from shared.builtins import BUILTINS_INFO
 
 SIZEOF_INT = 32
 SIZEOF_BYTE = 8
+SIZEOF_BOOL = 1
 
 RELATIONAL_METADATA = {
     '<': (ICMP_SLT, 'LTTMP'),
@@ -19,7 +20,7 @@ NAME = 1
 
 PRIMITIVE_TYPE_OBJS = {
     'int': Type.int(SIZEOF_INT),
-    'boolean': Type.int(1),
+    'boolean': Type.int(SIZEOF_BOOL),
     'string': Type.pointer(Type.int(SIZEOF_BYTE)),
     'void': Type.void()
 }
@@ -34,6 +35,7 @@ class LLVM_Backend:
         self.__syntax_tree = syntax_tree
         self.__classes = [top_def for top_def in self.__syntax_tree if top_def['Type'] == 'ClassDecl']
         self.__functions = functions
+        self.__llvm_functions = {}
         self.__class_meta = class_meta
         self.__current_class = None
         self.__function_envs = []
@@ -42,37 +44,69 @@ class LLVM_Backend:
         self.__true_block = None
         self.__false_block = None
         self.__end_block = None
+        self.__load_builtins()
+
+
+    def __load_builtins(self):
+        self.__llvm_functions['printInt'] =\
+                Function.new(self.__module, Type.function(Type.void(), (Type.int(),)), 'printInt')
+        self.__llvm_functions['printString'] =\
+                Function.new(self.__module, Type.function(Type.void(),
+                    (Type.pointer(Type.int(SIZEOF_BYTE)),)), 'printString')
+        self.__llvm_functions['error'] =\
+                Function.new(self.__module, Type.function(Type.void(), ()), 'error')
+        self.__llvm_functions['readInt'] =\
+                Function.new(self.__module, Type.function(Type.int(), ()), 'readInt')
+        self.__llvm_functions['readString'] =\
+                Function.new(self.__module, Type.function(Type.pointer(Type.int(SIZEOF_BYTE)), ()), 'readString')
+        self.__memcpy = Function.intrinsic(self.__module, INTR_MEMCPY,
+                [Type.pointer(Type.int(SIZEOF_BYTE)), Type.pointer(Type.int(SIZEOF_BYTE)),
+                    Type.int(), Type.int(), Type.int(SIZEOF_BOOL)])
+        self.__strlen = Function.new(self.__module, Type.function(Type.int(),
+            (Type.pointer(Type.int(SIZEOF_BYTE)),)), 'strlen')
+
+
+    def gen_expr_string_concat(self, expr, left, right):
+        len_left = self.__llvm_builder.call(self.__strlen, (left,), 'lenleft')
+        len_right = self.__llvm_builder.call(self.__strlen, (right,), 'lenright')
+        concatenated = self.__llvm_builder.malloc_array(
+                Type.int(SIZEOF_BYTE), self.__llvm_builder.add(len_left, len_right))
+        self.__llvm_builder.call(self.__memcpy,
+                (concatenated, left, len_left, Constant.int(Type.int(), 0),
+                    Constant.int(Type.int(SIZEOF_BOOL), 0)))
+        after_left = self.__llvm_builder.gep(concatenated, (len_left,))
+        self.__llvm_builder.call(self.__memcpy, (after_left, right, len_right,
+            Constant.int(Type.int(), 0), Constant.int(Type.int(SIZEOF_BOOL), 0)))
+        return concatenated
 
 
     def gen_expr_arithm(self, expr):
         left = self.gen_expr(expr['Left'])
         right = self.gen_expr(expr['Right'])
 
-        #if expr['EvalType'] == 'string' and expr['Op']['Op'] == '+':
-        #    self.gen_expr_string_concat(expr)
-        #else:
-        if expr['Op']['Op'] == '+':
-            return self.__llvm_builder.add(left, right, 'addtmp')
-        elif expr['Op']['Op'] == '-':
-            return self.__llvm_builder.sub(left, right, 'subtmp')
-        elif expr['Op']['Op'] == '*':
-            return self.__llvm_builder.mul(left, right, 'multmp')
-        elif expr['Op']['Op'] == '/':
-            return self.__llvm_builder.div(left, right, 'divtmp')
-        elif expr['Op']['Op'] == '%':
-            return self.__llvm_builder.srem(left, right, 'modtmp')
+        if expr['EvalType'] == 'string' and expr['Op']['Op'] == '+':
+            return self.gen_expr_string_concat(expr, left, right)
+        else:
+            if expr['Op']['Op'] == '+':
+                return self.__llvm_builder.add(left, right, 'addtmp')
+            elif expr['Op']['Op'] == '-':
+                return self.__llvm_builder.sub(left, right, 'subtmp')
+            elif expr['Op']['Op'] == '*':
+                return self.__llvm_builder.mul(left, right, 'multmp')
+            elif expr['Op']['Op'] == '/':
+                return self.__llvm_builder.sdiv(left, right, 'divtmp')
+            elif expr['Op']['Op'] == '%':
+                return self.__llvm_builder.srem(left, right, 'modtmp')
 
 
     def gen_expr_rel(self, expr):
         true_block = self.__true_block
         false_block = self.__false_block
-        end_block = self.__end_block
         self.set_blocks_to_none()
         left = self.gen_expr(expr['Left'])
         right = self.gen_expr(expr['Right'])
         self.__true_block = true_block
         self.__false_block = false_block
-        self.__end_block = end_block
         if expr['Left']['EvalType'] in ('int', 'boolean'):
             result = self.__llvm_builder.icmp(RELATIONAL_METADATA[expr['Op']['Op']][PRED],
                     left, right, RELATIONAL_METADATA[expr['Op']['Op']][NAME])
@@ -132,15 +166,25 @@ class LLVM_Backend:
                  self.gen_expr(expr['Arg']), 'andtmp')
 
     def gen_expr_var(self, expr):
-        result = self.__llvm_builder.load(get_var(self.__function_envs, expr))
+        var = get_var(self.__function_envs, expr, self.__class_meta, self.__current_class)
+        var_meta = get_var(self.__function_meta_envs, expr, self.__class_meta, self.__current_class)
+        if var_meta['LatteType']['MetaType'] != 'Array':
+            result = self.__llvm_builder.load(var)
+        else:
+            result = var
         if self.__false_block and self.__true_block:
             self.__llvm_builder.cbranch(result, self.__true_block, self.__false_block)
         return result
 
 
     def gen_expr_funcall(self, expr):
-        result = self.__llvm_builder.call(self.__module.get_function_named(expr['Name']),
-                [self.gen_expr(arg) for arg in expr['ListArg']], 'calltmp')
+        args = []
+        for arg in expr['ListArg']:
+            if arg['EvalMetaType'] != 'Array':
+                args.append(self.gen_expr(arg))
+            else:
+                args.append(get_var(self.__function_envs, arg, self.__class_meta, self.__current_class))
+        result = self.__llvm_builder.call(self.__llvm_functions[expr['Name']], args)
         if self.__false_block and self.__true_block:
             self.__llvm_builder.cbranch(result, self.__true_block, self.__false_block)
         return result
@@ -156,7 +200,8 @@ class LLVM_Backend:
         arr_ptr = self.__llvm_builder.gep(alloca,
                 (Constant.int(Type.int(), 0), Constant.int(Type.int(), 1)), 'arr_ptr')
         self.__llvm_builder.store(size, size_ptr)
-        self.__llvm_builder.malloc_array(malloc_type, size, 'arr_ptr')
+        malloced_ptr = self.__llvm_builder.malloc_array(malloc_type, size, 'arr_ptr')
+        self.__llvm_builder.store(malloced_ptr, arr_ptr)
         return alloca
 
 
@@ -171,10 +216,10 @@ class LLVM_Backend:
 
 
     def gen_expr_attribute(self, expr):
-        parent_object = get_var(self.__function_envs, expr, self.__class_meta, self.__current_class)
-        if parent_object['LatteType']['MetaType'] == 'Array' and expr['Attr'] == 'length':
-            array_obj = self.__llvm_builder.load(parent_object)
-            size_ptr = self.__llvm_builder.gep(array_obj,
+        parent_object_ptr = get_var(self.__function_envs, expr, self.__class_meta, self.__current_class)
+        parent_object_meta = get_var(self.__function_meta_envs, expr, self.__class_meta, self.__current_class)
+        if parent_object_meta['LatteType']['MetaType'] == 'Array' and expr['Attr'] == 'length':
+            size_ptr = self.__llvm_builder.gep(parent_object_ptr,
                     (Constant.int(Type.int(), 0), Constant.int(Type.int(), 0)))
             return self.__llvm_builder.load(size_ptr)
         elif parent_object['LatteType']['MetaType'] =='Class':
@@ -189,7 +234,7 @@ class LLVM_Backend:
 
 
     def gen_expr_null(self, expr):
-        return ConstantPointerNull.null(Type.int())
+        return ConstantPointerNull.null(Type.int(SIZEOF_BYTE))
 
 
     def gen_expr_arr_subscript(self, expr):
@@ -211,9 +256,14 @@ class LLVM_Backend:
                         if expr['Value'] else self.__false_block)
             return Constant.int(Type.int(1), expr['Value'])
         elif expr['Type'] == 'StrLiteral':
-            return Constant.array(Type.int(1), len(expr['Value']))
+            string_const = Constant.stringz(expr['Value'])
+            string = self.__module.add_global_variable(string_const.type, expr['Value'])
+            string.initializer = string_const
+            string.global_constant = True
+            string.linkage = LINKAGE_INTERNAL
+            return string.gep((Constant.int(Type.int(), 0), Constant.int(Type.int(), 0)))
         elif expr['Type'] == 'UnaryOp':
-            self.gen_expr_unary(expr)
+            return self.gen_expr_unary(expr)
         elif expr['Type'] == 'BinaryOp':
             if expr['Op']['MetaType'] == 'ArithmOp':
                 return self.gen_expr_arithm(expr)
@@ -242,7 +292,6 @@ class LLVM_Backend:
 
 
     def set_blocks_to_none(self):
-        self.__end_block = None
         self.__true_block = None
         self.__false_block = None
 
@@ -250,7 +299,6 @@ class LLVM_Backend:
     def gen_if_stmt(self, stmt):
         function = self.__llvm_builder.basic_block.function
         self.__true_block = true_block = function.append_basic_block('then')
-        self.__end_block = end_block = function.append_basic_block('endif')
         if stmt['Type'] == 'IfElseStmt':
             self.__false_block = false_block = function.append_basic_block('else')
             self.gen_expr(stmt['Condition'])
@@ -259,13 +307,18 @@ class LLVM_Backend:
             self.__push_env()
             self.gen_stmt(stmt['Stmt1'])
             self.__pop_env()
-            self.__llvm_builder.branch(end_block)
+            if not stmt['Stmt1']['Returns']:
+                end_block = function.append_basic_block('endif')
+                self.__llvm_builder.branch(end_block)
             self.__llvm_builder.position_at_end(false_block)
             self.__push_env()
             self.gen_stmt(stmt['Stmt2'])
             self.__pop_env()
-            self.__llvm_builder.branch(end_block)
+            if not stmt['Stmt2']['Returns']:
+                self.__llvm_builder.branch(end_block)
+                self.__llvm_builder.position_at_end(end_block)
         else:
+            end_block = function.append_basic_block('endif')
             self.__false_block = end_block
             self.gen_expr(stmt['Condition'])
             self.set_blocks_to_none()
@@ -273,8 +326,9 @@ class LLVM_Backend:
             self.__push_env()
             self.gen_stmt(stmt['Stmt'])
             self.__pop_env()
-            self.__llvm_builder.branch(end_block)
-        self.__llvm_builder.position_at_end(end_block)
+            if not stmt['Stmt']['Returns']:
+                self.__llvm_builder.branch(end_block)
+            self.__llvm_builder.position_at_end(end_block)
         self.__llvm_builder.add(Constant.int(Type.int(), 1), Constant.int(Type.int(), 1), 'nop')
 
 
@@ -293,17 +347,30 @@ class LLVM_Backend:
             for item in stmt['Items']:
                 malloc_type = PRIMITIVE_TYPE_OBJS[type_name] if type_name in PRIMITIVES\
                         else Type.pointer(self.__class_structs[type_name])
-                alloca = None
+                array_struct = None
                 if item['Assigned']:
                     item['Assigned']['MallocType'] = malloc_type
-                    alloca = self.gen_expr(item['Assigned'])
+                    array_struct = self.gen_expr(item['Assigned'])
                 else:
-                    alloca = self.__llvm_builder.alloca(Type.struct((Type.int(), Type.pointer(malloc_type))))
-                    size_ptr, array_ptr = self.__get_size_and_arr_ptr(alloca)
+                    array_struct = self.__llvm_builder.alloca(Type.struct((Type.int(), Type.pointer(malloc_type))))
+                    size_ptr, array_ptr = self.__get_size_and_arr_ptr(array_struct)
                     self.__llvm_builder.store(Constant.int(Type.int(), 0), size_ptr)
                     self.__llvm_builder.store(ConstantPointerNull.null(Type.pointer(malloc_type)), array_ptr)
+                self.__function_envs[-1][item['Name']] = array_struct
+                self.__function_meta_envs[-1][item['Name']] = item
+                self.__function_meta_envs[-1][item['Name']]['LatteType'] = stmt['LatteType']
+        elif stmt['LatteType']['TypeName'] == 'string':
+            for item in stmt['Items']:
+                if item['Assigned']:
+                    var_val = self.gen_expr(item['Assigned'])
+                else:
+                    var_val = self.gen_zero(stmt)
+                alloca = self.__llvm_builder.alloca(var_val.type, item['Name'])
+                self.__llvm_builder.store(var_val, alloca)
                 self.__function_envs[-1][item['Name']] = alloca
                 self.__function_meta_envs[-1][item['Name']] = item
+                self.__function_meta_envs[-1][item['Name']]['LatteType'] = stmt['LatteType']
+
         elif stmt['LatteType']['MetaType'] == 'Primitive':
             for item in stmt['Items']:
                 alloca = self.__llvm_builder.alloca(PRIMITIVE_TYPE_OBJS[type_name], item['Name'])
@@ -311,9 +378,11 @@ class LLVM_Backend:
                     var_val = self.gen_expr(item['Assigned'])
                 else:
                     var_val = self.gen_zero(stmt)
+
                 self.__llvm_builder.store(var_val, alloca)
                 self.__function_envs[-1][item['Name']] = alloca
                 self.__function_meta_envs[-1][item['Name']] = item
+                self.__function_meta_envs[-1][item['Name']]['LatteType'] = stmt['LatteType']
         elif stmt['LatteType']['MetaType'] == 'Class':
             for item in stmt['Items']:
                 object_type = self.__class_structs[type_name]
@@ -326,6 +395,7 @@ class LLVM_Backend:
                     self.__llvm_builder.store(Constant.null(Type.pointer(object_type)), obj_ptr)
                 self.__function_envs[-1][item['Name']] = obj_ptr
                 self.__function_meta_envs[-1][item['Name']] = item
+                self.__function_meta_envs[-1][item['Name']]['LatteType'] = stmt['LatteType']
 
 
     def gen_stmt_while_loop(self, stmt):
@@ -364,12 +434,12 @@ class LLVM_Backend:
         value = self.gen_expr(stmt['Expr'])
         lvalue_ast = get_var(self.__function_meta_envs,
                 stmt['LValue'], self.__class_meta, self.__current_class)
-        lvalue_latte = get_var(self.__function_envs,
+        lvalue_from_env = get_var(self.__function_envs,
                 stmt['LValue'], self.__class_meta, self.__current_class)
         meta_type = lvalue_ast['LatteType']['MetaType']
         if stmt['LValue']['Type'] == 'LArrSubscript':
             meta_type = 'Primitive'
-        lvalue_latte = self.get_element(stmt, lvalue_latte, lvalue_ast)
+        lvalue_latte = self.get_element(stmt, lvalue_from_env, lvalue_ast)
         if meta_type in ('Primitive', 'Class'):
             self.__llvm_builder.store(value, lvalue_latte)
         elif meta_type == 'Array':
@@ -419,23 +489,33 @@ class LLVM_Backend:
     def gen_stmt_for(self, stmt):
         self.__push_env()
         self.gen_stmt_var_decl(stmt['LoopVar'])
-        array_struct_ptr = get_var(self.__function_envs, expr, self.__class_meta, self.__current_class)
-        size_ptr, arr_ptr = self.__get_size_and_arr_ptr(array_struct_ptr)
-        loop_var_alloca = self.__llvm_builder.alloca(PRIMITIVE_TYPE_OBJS[stmt['LoopVar']['LatteType']['TypeName']]\
-                if type_name in PRIMITIVES else Type.pointer(self.__class_structs[type_name]))
-        self.__llvm_builder.store(Constant.int(Type.int(), 0))
+        array_struct_ptr = get_var(self.__function_envs, stmt, self.__class_meta, self.__current_class)
+        size_ptr, array_ptr = self.__get_size_and_arr_ptr(array_struct_ptr)
+        index_alloca = self.__llvm_builder.alloca(Type.int())
+        self.__llvm_builder.store(Constant.int(Type.int(), 0), index_alloca)
         function = self.__llvm_builder.basic_block.function
+
         cond_block = function.append_basic_block('for_cond')
+        loop_block = function.append_basic_block('for_loop')
+        merge_block = function.append_basic_block('endfor')
         self.__llvm_builder.branch(cond_block)
-        self.__true_block = loop_block = function.append_basic_block('for_loop')
-        self.__false_block = merge_block = function.append_basic_block('endfor')
         self.__llvm_builder.position_at_end(cond_block)
-        self.set_blocks_to_none()
+        size = self.__llvm_builder.load(size_ptr)
+        current_loop_var_val = self.__llvm_builder.load(index_alloca)
+        cond = self.__llvm_builder.icmp(ICMP_SLT, current_loop_var_val, size)
+        self.__llvm_builder.cbranch(cond, loop_block, merge_block)
+
         self.__llvm_builder.position_at_end(loop_block)
+        array = self.__llvm_builder.load(array_ptr)
+        elem_ptr = self.__llvm_builder.gep(array, (current_loop_var_val,))
+        loop_var_ptr = get_var(self.__function_envs, stmt['LoopVar'], self.__class_meta, self.__current_class)
+        elem = self.__llvm_builder.load(elem_ptr)
+        self.__llvm_builder.store(elem, loop_var_ptr)
         self.__push_env()
         self.gen_stmt(stmt['Stmt'])
         self.__pop_env()
-        self.__llvm_builder.add(self.__llvm_builder.load(loop_var_alloca), Constant.int(Type.int(), 1))
+        new_index = self.__llvm_builder.add(self.__llvm_builder.load(index_alloca), Constant.int(Type.int(), 1))
+        self.__llvm_builder.store(new_index, index_alloca)
         self.__llvm_builder.branch(cond_block)
         self.__llvm_builder.position_at_end(merge_block)
 
@@ -469,8 +549,15 @@ class LLVM_Backend:
             return Constant.int(Type.int(), 0)
         elif object_['LatteType']['TypeName'] == 'boolean':
             return Constant.int(Type.int(1), 0)
+        elif object_['LatteType']['TypeName'] == 'string':
+            string_const = Constant.stringz("")
+            string = self.__module.add_global_variable(string_const.type, 'NullString')
+            string.initializer = string_const
+            string.global_constant = True
+            string.linkage = LINKAGE_INTERNAL
+            return string.gep((Constant.int(Type.int(), 0), Constant.int(Type.int(), 0)))
         else:
-            return ConstantPointerNull.int(Type.int(), 0)
+            return Constant.null(Type.int(SIZEOF_BYTE))
 
 
     def gen_class_ctor(self, class_):
@@ -511,9 +598,18 @@ class LLVM_Backend:
 
 
     def get_function_type(self):
-        return Type.function(PRIMITIVE_TYPE_OBJS[self.current_function_ast['LatteType']['TypeName']],
-            tuple(PRIMITIVE_TYPE_OBJS[arg['LatteType']['TypeName']]
-                for arg in self.current_function_ast['ListArg']), False)
+        arg_types = []
+        for arg in self.current_function_ast['ListArg']:
+            if arg['LatteType']['MetaType'] != 'Array':
+                arg_types.append(self.get_type(arg))
+            else:
+                arg_types.append(Type.pointer(self.get_type(arg)))
+        return_type = None
+        if self.current_function_ast['LatteType']['MetaType'] != 'Array':
+            return_type = self.get_type(self.current_function_ast)
+        else:
+            return_type = Type.pointer(self.get_type(self.current_function_ast))
+        return Type.function(return_type, arg_types, False)
 
 
     def __push_env(self):
@@ -527,19 +623,26 @@ class LLVM_Backend:
         self.__function_meta_envs.pop()
 
 
-    def get_type(self, attr_name, class_meta):
-        attribute = class_meta.attributes[attr_name]
-        if attribute['LatteType']['TypeName'] in PRIMITIVES:
-            return PRIMITIVE_TYPE_OBJS[attribute['LatteType']['TypeName']]
-        elif attribute['LatteType']['TypeName'] in self.__class_structs:
-            return self.__class_structs[attribute['LatteType']['TypeName']]
-
-
-    def alloc_in_entry_block(self, var_name, type_):
-        entry = self.current_function_llvm.get_entry_basic_block()
-        builder = Builder.new(entry)
-        builder.position_at_end(entry)
-        return builder.alloca(type_, var_name)
+    def get_type(self, latte_object):
+        if type(latte_object).__name__ == 'str':
+            print latte_object
+        if latte_object['LatteType']['MetaType'] == 'Array':
+            type_ = None
+            if latte_object['LatteType']['TypeName'] in PRIMITIVES and\
+                latte_object['LatteType']['TypeName'] != 'string':
+                type_ = PRIMITIVE_TYPE_OBJS[latte_object['LatteType']['TypeName']]
+            elif latte_object['LatteType']['TypeName'] in self.__class_structs:
+                type_ = self.__class_structs[latte_object['LatteType']['TypeName']]
+            elif latte_object['LatteType']['TypeName'] == 'string':
+                type_ = Type.pointer(Type.int(SIZEOF_BYTE))
+            return Type.struct((Type.int(), Type.pointer(type_)))
+        if latte_object['LatteType']['TypeName'] in PRIMITIVES and\
+                latte_object['LatteType']['TypeName'] != 'string':
+            return PRIMITIVE_TYPE_OBJS[latte_object['LatteType']['TypeName']]
+        elif latte_object['LatteType']['TypeName'] == 'string':
+            return Type.pointer(Type.int(SIZEOF_BYTE))
+        elif latte_object['LatteType']['TypeName'] in self.__class_structs:
+            return self.__class_structs[latte_object['LatteType']['TypeName']]
 
 
     def gen_class_struct(self, class_):
@@ -554,8 +657,8 @@ class LLVM_Backend:
         self.__class_meta[class_['Name']].base_class_arguments_len =\
                 len(self.__class_meta[class_['Name']].attributes_keys) - subclass_attributes_len
         ts = Type.opaque('class.' + class_['Name'])
-        ts.set_body([self.get_type(attribute, self.__class_meta[class_['Name']])
-            for attribute in self.__class_meta[class_['Name']].attributes_keys])
+        ts.set_body([self.get_type(self.__class_meta[class_['Name']].attributes[attr_name])
+            for attr_name in self.__class_meta[class_['Name']].attributes_keys])
         self.__class_structs[class_['Name']] = ts
 
 
@@ -566,24 +669,30 @@ class LLVM_Backend:
         for class_ in self.__classes:
             self.gen_class_ctor(class_)
 
+
         for function_name, function in (x for x in self.__functions.iteritems() if x[0] not in BUILTINS_INFO):
             self.current_function_ast = function
+            self.__llvm_functions[function_name] = Function.new(self.__module, self.get_function_type(), function_name)
+
+        for function_name, function in (x for x in self.__functions.iteritems() if x[0] not in BUILTINS_INFO):
             self.__current_function_returns = False
             self.__push_env()
-            self.current_function_llvm = Function.new(self.__module, self.get_function_type(), function_name)
+            self.current_function_llvm = self.__llvm_functions[function_name]
             self.__current_block = self.current_function_llvm.append_basic_block('entry')
             self.__llvm_builder = Builder.new(self.__current_block)
             for arg, arg_passed in zip(self.current_function_llvm.args, function['ListArg']):
                 arg.name = arg_passed['Name']
-                alloca = self.alloc_in_entry_block(
-                    PRIMITIVE_TYPE_OBJS[arg_passed['LatteType']['TypeName']], arg.name)
-                self.__llvm_builder.store(arg, alloca)
-                self.__function_envs[-1][arg_passed['Name']] = alloca
-                self.__function_envs[-1][arg_passed['Name']] = arg_passed
+                if arg_passed['LatteType']['MetaType'] == 'Primitive':
+                    alloca = self.__llvm_builder.alloca(self.get_type(arg_passed), arg.name)
+                    self.__llvm_builder.store(arg, alloca)
+                    self.__function_envs[-1][arg_passed['Name']] = alloca
+                else:
+                    self.__function_envs[-1][arg_passed['Name']] = arg
+                self.__function_meta_envs[-1][arg_passed['Name']] = arg_passed
             for stmt in function['Body']['Stmts']:
                 self.gen_stmt(stmt)
             if not self.__current_function_returns and function['LatteType']['TypeName']:
                 self.__llvm_builder.ret_void()
             self.current_function_llvm.verify()
             self.__pop_env()
-            print self.__module
+        #print self.__module

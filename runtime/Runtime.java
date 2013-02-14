@@ -6,6 +6,11 @@ public class Runtime {
         System.out.println(a);
     }
 
+    public void printBool(boolean a) {
+        System.out.println(a);
+    }
+
+
     public void printString(String s) {
         System.out.println(s);
     }
