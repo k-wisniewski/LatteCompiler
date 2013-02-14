@@ -624,8 +624,6 @@ class LLVM_Backend:
 
 
     def get_type(self, latte_object):
-        if type(latte_object).__name__ == 'str':
-            print latte_object
         if latte_object['LatteType']['MetaType'] == 'Array':
             type_ = None
             if latte_object['LatteType']['TypeName'] in PRIMITIVES and\
@@ -642,7 +640,7 @@ class LLVM_Backend:
         elif latte_object['LatteType']['TypeName'] == 'string':
             return Type.pointer(Type.int(SIZEOF_BYTE))
         elif latte_object['LatteType']['TypeName'] in self.__class_structs:
-            return self.__class_structs[latte_object['LatteType']['TypeName']]
+            return Type.pointer(self.__class_structs[latte_object['LatteType']['TypeName']])
 
 
     def gen_class_struct(self, class_):
@@ -656,16 +654,16 @@ class LLVM_Backend:
             self.__class_meta[class_['Name']].attributes_keys = self.__class_meta[class_['Name']].attributes.keys()
         self.__class_meta[class_['Name']].base_class_arguments_len =\
                 len(self.__class_meta[class_['Name']].attributes_keys) - subclass_attributes_len
-        ts = Type.opaque('class.' + class_['Name'])
-        ts.set_body([self.get_type(self.__class_meta[class_['Name']].attributes[attr_name])
-            for attr_name in self.__class_meta[class_['Name']].attributes_keys])
-        self.__class_structs[class_['Name']] = ts
+        self.__class_structs[class_['Name']] = Type.opaque('class.' + class_['Name'])
+        body = [self.get_type(self.__class_meta[class_['Name']].attributes[attr_name])
+            for attr_name in self.__class_meta[class_['Name']].attributes_keys]
+        self.__class_structs[class_['Name']].set_body(body)
 
 
     def generate_llvm(self):
         for class_ in self.__classes:
             self.gen_class_struct(class_)
-
+        print 'OK'
         for class_ in self.__classes:
             self.gen_class_ctor(class_)
 
