@@ -64,6 +64,8 @@ class LLVM_Backend:
                     Type.int(), Type.int(), Type.int(SIZEOF_BOOL)])
         self.__strlen = Function.new(self.__module, Type.function(Type.int(),
             (Type.pointer(Type.int(SIZEOF_BYTE)),)), 'strlen')
+        self.__strcmp = Function.new(self.__module, Type.function(Type.int(),
+            (Type.pointer(Type.int(SIZEOF_BYTE)), Type.pointer(Type.int(SIZEOF_BYTE)))), 'strcmp')
 
 
     def gen_expr_string_concat(self, expr, left, right):
@@ -107,15 +109,19 @@ class LLVM_Backend:
         right = self.gen_expr(expr['Right'])
         self.__true_block = true_block
         self.__false_block = false_block
-        if expr['Left']['EvalType'] in ('int', 'boolean'):
+        if expr['Left']['EvalType'] in ('int', 'boolean') or expr['Left']['EvalMetaType'] == 'Class':
             result = self.__llvm_builder.icmp(RELATIONAL_METADATA[expr['Op']['Op']][PRED],
                     left, right, RELATIONAL_METADATA[expr['Op']['Op']][NAME])
             if self.__false_block and self.__true_block:
                 self.__llvm_builder.cbranch(result, self.__true_block, self.__false_block)
             return result
-        else:
-            # TODO: string comparison
-            pass
+        elif expr['Left']['EvalType'] == 'string':
+            result = self.__llvm_builder.call(self.__strcmp, (left, right))
+            if self.__false_block and self.__true_block:
+                cond = self.__llvm_builder.icmp(RELATIONAL_METADATA[expr['Op']['Op']][PRED],
+                    left, right, RELATIONAL_METADATA[expr['Op']['Op']][NAME])
+                self.__llvm_builder.cbranch(cond, self.__true_block, self.__false_block)
+            return result
 
 
     def gen_expr_log(self, expr):
@@ -214,7 +220,6 @@ class LLVM_Backend:
         return malloced_obj
 
 
-
     def gen_expr_attribute(self, expr):
         parent_object_ptr = get_var(self.__function_envs, expr, self.__class_meta, self.__current_class)
         parent_object_meta = get_var(self.__function_meta_envs, expr, self.__class_meta, self.__current_class)
@@ -222,19 +227,28 @@ class LLVM_Backend:
             size_ptr = self.__llvm_builder.gep(parent_object_ptr,
                     (Constant.int(Type.int(), 0), Constant.int(Type.int(), 0)))
             return self.__llvm_builder.load(size_ptr)
-        elif parent_object['LatteType']['MetaType'] =='Class':
-            pass
-
-
+        elif parent_object_meta['LatteType']['MetaType'] =='Class':
+            parent_object_ptr = self.__llvm_builder.load(parent_object_ptr)
+            parent_object_class_meta = self.__class_meta[parent_object_meta['LatteType']['TypeName']]
+            index_of_attr = len(parent_object_class_meta.attributes_keys) - 1 -\
+                parent_object_class_meta.attributes_keys[::-1].index(expr['Attr'])
+            field_ptr = self.__llvm_builder.gep(parent_object_ptr,
+                    (Constant.int(Type.int(), 0), Constant.int(Type.int(), index_of_attr)))
+            return self.__llvm_builder.load(field_ptr)
 
             #    def gen_expr_method_call(self, expr):
             #        pass
     def gen_expr_cast(self, expr):
-        pass
-
+        casted_ptr = self.gen_expr(expr['Expr'])
+        type_ = None
+        if expr['ToLatteType']['MetaType'] == 'Primitive':
+            type_ = PRIMITIVE_TYPE_OBJS[expr['ToLatteType']['TypeName']]
+        else:
+            type_ = Type.pointer(self.__class_structs[expr['ToLatteType']['TypeName']])
+        return self.__llvm_builder.bitcast(casted_ptr, type_)
 
     def gen_expr_null(self, expr):
-        return ConstantPointerNull.null(Type.int(SIZEOF_BYTE))
+        return ConstantPointerNull.null(Type.pointer(Type.int(SIZEOF_BYTE)))
 
 
     def gen_expr_arr_subscript(self, expr):
@@ -423,9 +437,11 @@ class LLVM_Backend:
             array = self.__llvm_builder.load(array_ptr)
             lvalue_latte = self.__llvm_builder.gep(array, (index,))
         elif stmt['LValue']['Type'] == 'LAttribute':
-            index = self.__class_meta[lvalue_ast['LatteType']['TypeName']].attributes_keys.\
-                index(stmt['LValue']['Attr'])
-            lvalue_latte = self.__llvm_builder.gep(lvalue, Constant.int(Type.int(), index))
+            index = len(self.__class_meta[lvalue_ast['LatteType']['TypeName']].attributes_keys) - 1 -\
+                (self.__class_meta[lvalue_ast['LatteType']['TypeName']].attributes_keys)[::-1].index(stmt['LValue']['Attr'])
+            lvalue_ptr = self.__llvm_builder.load(lvalue_latte)
+            lvalue_latte = self.__llvm_builder.gep(lvalue_ptr,
+                    (Constant.int(Type.int(), 0), Constant.int(Type.int(), index),))
         return lvalue_latte
 
 
@@ -671,6 +687,7 @@ class LLVM_Backend:
             self.current_function_ast = function
             self.__llvm_functions[function_name] = Function.new(self.__module, self.get_function_type(), function_name)
 
+
         for function_name, function in (x for x in self.__functions.iteritems() if x[0] not in BUILTINS_INFO):
             self.__current_function_returns = False
             self.__push_env()
@@ -679,11 +696,11 @@ class LLVM_Backend:
             self.__llvm_builder = Builder.new(self.__current_block)
             for arg, arg_passed in zip(self.current_function_llvm.args, function['ListArg']):
                 arg.name = arg_passed['Name']
-                if arg_passed['LatteType']['MetaType'] == 'Primitive':
+                if arg_passed['LatteType']['MetaType'] in ('Primitive', 'Class'):
                     alloca = self.__llvm_builder.alloca(self.get_type(arg_passed), arg.name)
                     self.__llvm_builder.store(arg, alloca)
                     self.__function_envs[-1][arg_passed['Name']] = alloca
-                else:
+                elif arg_passed['LatteType']['MetaType'] == 'Array':
                     self.__function_envs[-1][arg_passed['Name']] = arg
                 self.__function_meta_envs[-1][arg_passed['Name']] = arg_passed
             for stmt in function['Body']['Stmts']:
@@ -692,4 +709,4 @@ class LLVM_Backend:
                 self.__llvm_builder.ret_void()
             self.current_function_llvm.verify()
             self.__pop_env()
-        print self.__module
+        #print self.__module

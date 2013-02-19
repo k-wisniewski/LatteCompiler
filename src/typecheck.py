@@ -70,15 +70,14 @@ class LatteSemanticAnalyzer:
             variable = get_var(self.__function_envs, statement['LValue'],
                     self.__class_meta, self.__current_function)
             attr = statement['LValue']['Attr']
-            class_env = self.__class_meta[variable['LatteType']['TypeName']]
             if variable['LatteType']['MetaType'] != 'Class':
                 self.__errors.append('arrays and primitive types don\'t have l-value attributes, line %d, pos: %d - %d' %
                     (statement['LineNo'], statement['StartPos'], statement['EndPos']))
-            if attr  not in class_env.attributes:
+            if not is_member(attr, self.__class_meta, variable['LatteType']['TypeName']):
                 self.__errors.append('objects of class %s do not have attribute %s, line: %d, pos: %d - %d' %
-                    (variable['LatteType']['TypeName'], statement['LineNo'], statement['StartPos'], statement['EndPos']))
+                    (variable['LatteType']['TypeName'], attr, statement['LineNo'], statement['StartPos'], statement['EndPos']))
             else:
-                variable = class_env.attributes[attr]
+                variable = get_member(attr, self.__class_meta, variable['LatteType']['TypeName'])
         return variable['LatteType']['TypeName'], variable['LatteType']['MetaType']
 
 
@@ -278,11 +277,11 @@ class LatteSemanticAnalyzer:
             node[key]['EvalMetaType'] = 'Primitive'
             return 'int', 'Primitive'
         type_name = type_['TypeName']
-        attr = self.__class_meta[type_name].attributes[expression['Attr']]
         if not is_member(expression['Attr'], self.__class_meta, type_name):
             raise InvalidExpression('%s is not member of class %d, line: %d, pos: %d - %d' %
                     (expression['Attr'], type_name, expression['LineNo'],
                         expression['StartPos'], expression['EndPos']))
+        attr = get_member(expression['Attr'], self.__class_meta, type_name)
         node[key]['EvalType'] = attr['LatteType']['TypeName']
         node[key]['EvalMetaType'] = attr['LatteType']['MetaType']
         return attr['LatteType']['TypeName'], attr['LatteType']['MetaType']

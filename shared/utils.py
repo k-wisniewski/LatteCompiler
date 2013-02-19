@@ -103,7 +103,7 @@ def is_member(member_name, class_envs, class_name, method=False):
 def get_member(member_name, class_envs, class_name, method=False):
     test = lambda class_name: member_name in class_envs[class_name].methods\
         if method else member_name in class_envs[class_name].attributes
-    to_be_returned = lambda class_name: class_envs[class_name].methods[member_name] if member_name else\
+    to_be_returned = lambda class_name: class_envs[class_name].methods[member_name] if method else\
             class_envs[class_name].attributes[member_name]
     while True:
         if test(class_name):
