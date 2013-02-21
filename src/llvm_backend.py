@@ -76,14 +76,18 @@ class LLVM_Backend:
     def gen_expr_string_concat(self, expr, left, right):
         len_left = self.__llvm_builder.call(self.__strlen, (left,), 'lenleft')
         len_right = self.__llvm_builder.call(self.__strlen, (right,), 'lenright')
-        concatenated = self.__llvm_builder.malloc_array(
-                Type.int(SIZEOF_BYTE), self.__llvm_builder.add(len_left, len_right))
+        concat_len = self.__llvm_builder.add(len_left, len_right)
+        #concat_len = self.__llvm_builder.sub(concat_len, Constant.int(Type.int(), 1))
+        concatenated = self.__llvm_builder.malloc_array(Type.int(SIZEOF_BYTE), concat_len)
         self.__llvm_builder.call(self.__memcpy,
                 (concatenated, left, len_left, Constant.int(Type.int(), 0),
                     Constant.int(Type.int(SIZEOF_BOOL), 0)))
         after_left = self.__llvm_builder.gep(concatenated, (len_left,))
         self.__llvm_builder.call(self.__memcpy, (after_left, right, len_right,
             Constant.int(Type.int(), 0), Constant.int(Type.int(SIZEOF_BOOL), 0)))
+
+        after_left = self.__llvm_builder.gep(concatenated, (concat_len,))
+        self.__llvm_builder.store(Constant.int(Type.int(SIZEOF_BYTE), 0), after_left)
         return concatenated
 
 
@@ -813,4 +817,3 @@ class LLVM_Backend:
             self.gen_func_decl(function_name, function)
 
         return self.__module
-        #print self.__module

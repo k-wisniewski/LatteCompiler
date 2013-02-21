@@ -3,11 +3,11 @@
 
 void printInt(int a)
 {
-    printf("%d", a);
+    printf("%d\n", a);
 }
 
 void printString(char* s) {
-    printf("%s", s);
+    printf("%s\n", s);
 }
 
 void error() {

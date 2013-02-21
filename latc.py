@@ -10,7 +10,7 @@ from src.jvm_backend  import JVM_Backend
 from src.llvm_backend import LLVM_Backend
 from shared.utils     import Logger, VERSION, BLUE, YELLOW, RST, RED
 
-RUNTIME_LIB = 'lib/runtime.bc'
+RUNTIME_LIB = os.path.join(os.path.dirname(__file__), 'lib/runtime.bc')
 
 def usage():
     print YELLOW +\
