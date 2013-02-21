@@ -10,6 +10,7 @@ from src.jvm_backend  import JVM_Backend
 from src.llvm_backend import LLVM_Backend
 from shared.utils     import Logger, VERSION, BLUE, YELLOW, RST, RED
 
+RUNTIME_LIB = 'lib/runtime.bc'
 
 def usage():
     print YELLOW +\
@@ -33,7 +34,7 @@ def main(argv=None):
         return -1
 
     output_file = os.path.splitext(input_file)[0]
-    target, optimize, jasmin = 'both', 1, 'lib/jasmin.jar'
+    target, optimize, jasmin = 'llvm', 1, 'lib/jasmin.jar'
     logger = Logger()
 
     for opt, arg in opts:
@@ -60,7 +61,7 @@ def main(argv=None):
     logger.log('Target architecure: $CYAN%s$RST' % target)
     logger.log('Optimization level: $CYAN%d (%s)$RST' %\
         (optimize, 'no optimizations' if optimize == 0 else 'simplifying expressions'))
-    if target in ('jvm', 'both'):
+    if target in ('jvm', 'all'):
         logger.log('Jasmin .jar file:   $CYAN%s$RST' % jasmin)
     try:
         with open(input_file) as input_fd:
@@ -68,45 +69,66 @@ def main(argv=None):
             syntax_tree, parsed = parser_instance.parse(input_fd.read())
             optimizer_instance = LatteOptimizer()
             if syntax_tree and parsed:
-                logger.log('Building abstract syntax tree: ....$GREENdone!$RST')
-            #    if target in ('jvm', 'both'):
-            #        semantic_analyzer = LatteSemanticAnalyzer(syntax_tree, optimizer_instance, 'jvm', logger)
-            #        if semantic_analyzer.analyze(optimize):
-            #            logger.log('Performing semantic analysis: .....$GREENdone!$RST')
-            #            jvm_backend_instance = JVM_Backend(syntax_tree,
-            #                    semantic_analyzer.get_functions(),
-            #                    (os.path.basename(os.path.splitext(input_file)[0]).capitalize()))
-            #            try:
-            #                with open(output_file, 'w+') as output_fd:
-            #                    output_fd.write(jvm_backend_instance.generate_jvm())
-            #            except IOError:
-            #                logger.error('couldn\'t open jvm assembly file for writing')
-            #            logger.log('Generating jvm assembly file: .....$GREENdone!$RST', True)
-            #            with open(os.devnull) as devnull:
-            #                arg_list = ['java', '-jar', jasmin, '-d',
-            #                    os.path.split(output_file)[0], output_file]
-            #                if optimize == 0:
-            #                    arg_list.append('-g')
-            #                print >> sys.stderr, RED,
-            #                call(arg_list, stdout=devnull)
-            #                print >> sys.stderr, RST
-            #            logger.log('Generating class file: ............$GREENdone!$RST')
-            #            logger.accept()
-            #            return 0
-            #    el
-                if target in ('llvm', 'both'):
+                logger.log('Building abstract syntax tree: ......$GREENdone!$RST')
+                if target in ('jvm', 'all'):
+                    semantic_analyzer = LatteSemanticAnalyzer(syntax_tree, optimizer_instance, 'jvm', logger)
+                    if semantic_analyzer.analyze(optimize):
+                        logger.log('Performing semantic analysis: .......$GREENdone!$RST')
+                        jvm_backend_instance = JVM_Backend(syntax_tree,
+                                semantic_analyzer.get_functions(),
+                                (os.path.basename(os.path.splitext(input_file)[0]).capitalize()))
+                        try:
+                            with open(output_file, 'w+') as output_fd:
+                                output_fd.write(jvm_backend_instance.generate_jvm())
+                        except IOError:
+                            logger.error('couldn\'t open jvm assembly file for writing')
+                        logger.log('Generating jvm assembly file: .......$GREENdone!$RST', True)
+                        with open(os.devnull) as devnull:
+                            arg_list = ['java', '-jar', jasmin, '-d',
+                                os.path.split(output_file)[0], output_file]
+                            if optimize == 0:
+                                arg_list.append('-g')
+                            print >> sys.stderr, RED,
+                            call(arg_list, stdout=devnull)
+                            print >> sys.stderr, RST
+                        logger.log('Generating class file: ..............$GREENdone!$RST')
+                        logger.accept()
+                        return 0
+                if target in ('llvm', 'all'):
                     semantic_analyzer = LatteSemanticAnalyzer(syntax_tree, optimizer_instance, 'llvm', logger)
                     if semantic_analyzer.analyze(optimize):
-                        logger.log('Performing semantic analysis: .....$GREENdone!$RST')
+                        logger.log('Performing semantic analysis: .......$GREENdone!$RST')
                         llvm_backend_instance = LLVM_Backend(syntax_tree, semantic_analyzer.get_functions(),
                                 semantic_analyzer.get_class_meta(),
                                 os.path.basename(os.path.splitext(input_file)[0]).capitalize())
                         llvm_ir = llvm_backend_instance.generate_llvm()
+                        if not llvm_ir:
+                            logger.error('LLVM IR generation failed')
+                        logger.log('Generating LLVM IR: .................$GREENdone!$RST')
+                        llvm_ir_text = str(llvm_ir)
+                        # A work around for a bug in llvm-py
+                        llvm_ir_text = llvm_ir_text.replace('memcpy.p0i8.p0i8.i32.i32.i1', 'memcpy.p0i8.p0i8.i32')
+                        logger.log('Patching memcpy mangling ............$GREENdone!$RST')
                         try:
                             with open(output_file + '.ll', 'w+') as output_fd:
-                                output_fd.write(llvm_ir)
+                                output_fd.write(llvm_ir_text)
                         except IOError:
                             logger.error('couldn\'t open llvm assembly file for writing')
+                        llvm_as = ['llvm-as', output_file + '.ll']
+                        if call(llvm_as) != 0:
+                            logger.error('llvm-as returned error')
+                            return -1
+                        logger.log('Running llvm-as .....................$GREENdone!$RST')
+                        llc = ['llc', '-o', output_file + '.s', output_file + '.bc']
+                        if call(llc) != 0:
+                            logger.error('llc returned error')
+                            return -1
+                        logger.log('Running llc .........................$GREENdone!$RST')
+                        clang = ['clang', '-o', output_file + '.out', output_file + '.s', RUNTIME_LIB]
+                        if call(clang) != 0:
+                            logger.error('linker error')
+                            return -1
+                        logger.log('Linking and generating execuatble ...$GREENdone!$RST')
                         logger.accept()
                     else:
                         return -1

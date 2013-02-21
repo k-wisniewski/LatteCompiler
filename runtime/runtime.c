@@ -6,11 +6,6 @@ void printInt(int a)
     printf("%d", a);
 }
 
-void printBool(int a)
-{
-    printf("%d", a);
-}
-
 void printString(char* s) {
     printf("%s", s);
 }
@@ -29,7 +24,7 @@ int readInt() {
 char* readString() {
     char* s = NULL;
     size_t dummy_buf_len;
-    getline(s, dummy_buf_len, stdin);
+    getline(&s, &dummy_buf_len, stdin);
     return s;
 }
 
