@@ -28,8 +28,8 @@ class LatteOptimizer:
             return result
         elif expression['Op']['Op'] == '!':
             result = self.__eval_expression(expression['Arg'], expression, 'Arg')
-            if result:
-                result = not result
+            if result.value != None:
+                result.value = not result.value
                 parent[key] = {'Type': 'BoolLiteral', 'Value': result.value, 'EvalType': 'boolean', 'EvalMetaType': 'Primitive',
                     'LineNo': expression['LineNo'], 'StartPos': expression['StartPos'], 'EndPos': expression['EndPos']}
             return result

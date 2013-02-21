@@ -1,8 +1,44 @@
-README:
-Parser i lexer wykonane przy użyciu biblioteki PLY (dostępna do instalacji w easy_install).
-Wersja 0.1:
-rozszerzenia: brak
-struktura katalogów:
-src/ - pliki źródłowe
-program napisany w pythonie - nie potrzebuje Makefile'a
-uruchamianie: ./latte <plik źródłowy>
+LATTE COMPILER v. 1.0
+©Krzysztof Wiśniewski (292551) 2012 - 2013
+
+rozszerzenia: 
+    -tablice
+    -struktury
+    -obiekty
+    -metody
+    -wirtualne
+    -optymalizacja stalych
+
+
+Wymagania:
+    Parser i lexer wykonane przy użyciu biblioteki PLY (dostępna do instalacji w pip).
+    Backend LLVM przy użyciu llvm-py (dostępna do instalacji w pip).
+
+
+Struktura katalogów:
+    ./ - glowny program kompilatora, Makefile, Readme
+    lib/ - biblioteki czasu wykonania
+    runtime/ - źródła bibliotek czasu wykonania 
+    misc/ - gramatyka dla BNFC (bez rozszerzeń)
+    shared/ - funkcje i stałe wspólne dla kilku modułów
+    src/ - pliki źródłowe modułów kompilatora
+    tests/ - testy
+
+
+Budowanie i uruchamianie:
+    make - kompiluje biblioteki czasu wykonania
+    make clean - usuwa biblioteki czasu wykonania
+    make test - odpala testy automatyczne
+    make test_clean - usuwa śmieci po uruchomieniu testów automatycznych
+
+    ./latc.py <plik źródłowy latte> - kompiluje plik źródłowy
+    opcje:
+        -j <plik>   -[tylko jvm] użyj pliku jako archiwum jar z biblioteką jasmin
+        -o <plik>   -zapisuj rezultat kompilacji do plików o podanej nazwie
+        -O <N>      -włącz (N==1)/ wyłącz(N==0) optymalizację stałych
+        -t <target> -generuj kod na dany target (jvm, llvm, all)
+        -v          -pokazuj wykonywane etapy kompilacji
+
+Uwagi:
+    rozszerzenia języka działają wyłącznie w llvm
+

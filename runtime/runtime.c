@@ -17,14 +17,24 @@ void error() {
 
 int readInt() {
     int i;
-    scanf("%d", &i);
+    char* s = NULL;
+    size_t dummy_buf_len;
+    getline(&s, &dummy_buf_len, stdin);
+    i = atoi(s);
     return i;
 }
 
 char* readString() {
     char* s = NULL;
-    size_t dummy_buf_len;
-    getline(&s, &dummy_buf_len, stdin);
+    size_t buf_len;
+    getline(&s, &buf_len, stdin);
+    for (int i = 0; i < buf_len; ++i)
+    {
+        if (s[i] == '\n')
+        {
+            s[i] = '\0';
+        }
+    }
     return s;
 }
 

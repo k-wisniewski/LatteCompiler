@@ -137,6 +137,7 @@ class LLVM_Backend:
         function = self.__llvm_builder.basic_block.function
         right = None
         left = None
+        val_ptr = None
         if expr['Op']['Op'] == '&&':
             if self.__false_block and self.__true_block:
                 true_block = self.__true_block
@@ -145,10 +146,16 @@ class LLVM_Backend:
                 self.__llvm_builder.position_at_end(self.__true_block)
                 self.__true_block = true_block
                 right = self.gen_expr(expr['Right'])
+                return
             else:
+                self.__true_block = function.append_basic_block('right_and')
+                self.__false_block = function.append_basic_block('false_and')
+                merge_block = function.append_basic_block('after_and')
+                val_ptr = self.__llvm_builder.alloca(Type.int(SIZEOF_BOOL))
                 left = self.gen_expr(expr['Left'])
+                self.__llvm_builder.position_at_end(self.__true_block)
+                self.__true_block = function.append_basic_block('true_and')
                 right = self.gen_expr(expr['Right'])
-                return self.__llvm_builder.and_(left, right, 'andtmp')
 
         elif expr['Op']['Op'] == '||':
             if self.__false_block and self.__true_block:
@@ -158,10 +165,27 @@ class LLVM_Backend:
                 self.__llvm_builder.position_at_end(self.__false_block)
                 self.__false_block = false_block
                 right = self.gen_expr(expr['Right'])
+                return
             else:
+                self.__false_block = function.append_basic_block('right_or')
+                self.__true_block = function.append_basic_block('true_or')
+                merge_block = function.append_basic_block('after_and')
+                val_ptr = self.__llvm_builder.alloca(Type.int(SIZEOF_BOOL))
                 left = self.gen_expr(expr['Left'])
+                self.__llvm_builder.position_at_end(self.__false_block)
+                self.__false_block = function.append_basic_block('false_or')
                 right = self.gen_expr(expr['Right'])
-                return self.__llvm_builder.or_(left, right, 'ortmp')
+
+        self.__llvm_builder.position_at_end(self.__true_block)
+        self.__llvm_builder.store(Constant.int(Type.int(SIZEOF_BOOL), 1), val_ptr)
+        self.__llvm_builder.branch(merge_block)
+        self.__llvm_builder.position_at_end(self.__false_block)
+        self.__llvm_builder.store(Constant.int(Type.int(SIZEOF_BOOL), 0), val_ptr)
+        self.__llvm_builder.branch(merge_block)
+        self.__llvm_builder.position_at_end(merge_block)
+        self.set_blocks_to_none()
+        return self.__llvm_builder.load(val_ptr)
+
 
 
     def gen_expr_unary(self, expr):
@@ -268,7 +292,6 @@ class LLVM_Backend:
                 args.append(self.gen_expr(arg))
             else:
                 args.append(get_var(self.__function_envs, arg, self.__class_meta, self.__current_class))
-        print
         result = self.__llvm_builder.call(method, args)
         if self.__false_block and self.__true_block:
             self.__llvm_builder.cbranch(result, self.__true_block, self.__false_block)
