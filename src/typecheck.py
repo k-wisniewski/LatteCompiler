@@ -1,12 +1,13 @@
 import sys
+from collections     import OrderedDict
 from shared.utils    import *
 from shared.builtins import BUILTINS_INFO
 
 class ClassEnv:
     def __init__(self):
-        self.attributes = {}
+        self.attributes = OrderedDict()
         self.extends = None
-        self.methods = {}
+        self.methods = OrderedDict()
 
 class LatteSemanticAnalyzer:
 
@@ -39,8 +40,8 @@ class LatteSemanticAnalyzer:
         for class_ in (top_def for top_def in self.__syntax_tree if top_def['Type'] == 'ClassDecl'):
             self.__classes.append(class_['Name'])
             self.__class_meta[class_['Name']] = ClassEnv()
-            self.__class_meta[class_['Name']].methods = \
-                    {member['Name']: member for member in class_['Members'] if member['Type'] == 'MethodDecl'}
+            self.__class_meta[class_['Name']].methods.update(
+                    [(member['Name'], member) for member in class_['Members'] if member['Type'] == 'MethodDecl'])
             for member in filter(lambda member: member['Type'] == 'FieldDecl', class_['Members']):
                 for item in member['Items']:
                     item['LatteType'] = member['LatteType']
@@ -552,7 +553,7 @@ class LatteSemanticAnalyzer:
                     var_type = statement['LatteType']['TypeName']
                     var_meta_type = statement['LatteType']['MetaType']
 
-                    if  not is_a(var_type, meta_type, var_type, var_meta_type, self.__class_meta):
+                    if  not is_a(expr_type, meta_type, var_type, var_meta_type, self.__class_meta):
                         self.__errors.append('in declaration of %s: invalid type of initializer, '
                             'expected: %s%s, got: %s%s, line: %d, position: %d - %d' %
                                 (item['Name'], var_type, self.__arr(var_meta_type), expr_type,

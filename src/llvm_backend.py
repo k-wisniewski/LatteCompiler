@@ -1,4 +1,5 @@
 from llvm.core       import *
+from collections     import OrderedDict
 from shared.utils    import get_var, PRIMITIVES
 from shared.builtins import BUILTINS_INFO
 
@@ -272,20 +273,24 @@ class LLVM_Backend:
 
     def gen_expr_method_call(self, expr):
         parent_object_ptr = get_var(self.__function_envs, expr, self.__class_meta, self.__current_class)
-        parent_object_meta = get_var(self.__function_meta_envs, expr, self.__class_meta, self.__current_class)
+        parent_object_class_name =\
+                get_var(self.__function_meta_envs,
+                        expr, self.__class_meta, self.__current_class)['LatteType']['TypeName']
         parent_object_ptr = self.__llvm_builder.load(parent_object_ptr)
-        parent_object_class_meta = self.__class_meta[parent_object_meta['LatteType']['TypeName']]
+        parent_object_class_meta = self.__class_meta[parent_object_class_name]
+
         vptr = self.__llvm_builder.gep(parent_object_ptr,
-                    (Constant.int(Type.int(), 0), Constant.int(Type.int(), 0)))
-        vtable = self.__llvm_builder.load(vptr)
-        index_of_method = parent_object_class_meta.methods_keys.index(expr['Method'])
+                    (Constant.int(Type.int(), 0), Constant.int(Type.int(), 0)), parent_object_class_name + 'vptr')
+        vtable = self.__llvm_builder.load(vptr, 'vtable')
+
+        index_of_method = parent_object_class_meta.methods.keys().index(expr['Method'])
         method_ptr_ptr = self.__llvm_builder.gep(vtable,
-                (Constant.int(Type.int(), 0), Constant.int(Type.int(), index_of_method),))
-        method_ptr = self.__llvm_builder.load(method_ptr_ptr)
-        method = self.__llvm_builder.bitcast(method_ptr, Type.pointer(self.__method_types[expr['Method']]))
-        #if expr['Method'] not in parent_object_class_meta.own_methods_keys:
-            #parent_object_ptr = self.__llvm_builder.bitcast(parent_object_ptr, self.__method_types[parent_object_class_meta[]])
-            #print parent_object_ptr
+                (Constant.int(Type.int(), 0), Constant.int(Type.int(), index_of_method),), expr['Method'] + '_ptr_ptr')
+        method_ptr = self.__llvm_builder.load(method_ptr_ptr, expr['Method'] + '_ptr')
+        method_type = self.__method_types[parent_object_class_name][expr['Method']]
+        method = self.__llvm_builder.bitcast(method_ptr, Type.pointer(method_type), expr['Method'])
+        if expr['Method'] not in parent_object_class_meta.own_methods_keys:
+            parent_object_ptr = self.__llvm_builder.bitcast(parent_object_ptr, method_type.args[0])
         args = [parent_object_ptr]
         for arg in expr['ListArg']:
             if arg['EvalMetaType'] != 'Array':
@@ -296,8 +301,6 @@ class LLVM_Backend:
         if self.__false_block and self.__true_block:
             self.__llvm_builder.cbranch(result, self.__true_block, self.__false_block)
         return result
-
-
 
 
     def gen_expr_cast(self, expr):
@@ -520,7 +523,12 @@ class LLVM_Backend:
         if stmt['LValue']['Type'] == 'LArrSubscript':
             meta_type = 'Primitive'
         lvalue_latte = self.get_element(stmt, lvalue_from_env, lvalue_ast)
-        if meta_type in ('Primitive', 'Class'):
+        if meta_type == 'Primitive':
+            self.__llvm_builder.store(value, lvalue_latte)
+        elif meta_type == 'Class':
+            if lvalue_latte.type.pointee != value.type:
+                value = self.__llvm_builder.bitcast(value,
+                        Type.pointer(self.__class_structs[lvalue_ast['LatteType']['TypeName']]))
             self.__llvm_builder.store(value, lvalue_latte)
         elif meta_type == 'Array':
             size_ptr_l = self.__llvm_builder.gep(lvalue_latte,
@@ -652,13 +660,14 @@ class LLVM_Backend:
             return ctor, ctor_builder, this
 
         def create_ctor_rest(this, ctor_builder):
-            vptr = ctor_builder.gep(this, (Constant.int(Type.int(), 0), Constant.int(Type.int(), 0)))
-            vtable = self.__vtables[class_['Name']]
-            ctor_builder.store(vtable, vptr)
             if class_['Extends']:
                 ctor_builder.call(
                     self.__module.get_function_named(
                         class_['Extends'] + '_._cast_ctor_' + class_['Name']), (this,))
+            vptr = ctor_builder.gep(this, (Constant.int(Type.int(), 0), Constant.int(Type.int(), 0)))
+            vtable = self.__vtables[class_['Name']]
+            ctor_builder.store(vtable, vptr)
+
             own_attr_index = self.__class_meta[class_['Name']].base_class_arguments_len + 1
             for index, attribute in enumerate(self.__class_meta[class_['Name']].own_attribute_keys, own_attr_index):
                 field_ptr = ctor_builder.gep(this,
@@ -744,28 +753,32 @@ class LLVM_Backend:
 
 
     def gen_vtable(self, class_):
-        self.__class_meta[class_['Name']].methods_keys = self.__class_meta[class_['Name']].methods.keys()
-        self.__class_meta[class_['Name']].own_methods_keys = self.__class_meta[class_['Name']].methods_keys
+        self.__class_meta[class_['Name']].own_methods_keys = self.__class_meta[class_['Name']].methods.keys()
         if class_['Extends']:
-            derived_methods = self.__class_meta[class_['Extends']].methods
+            derived_methods = self.__class_meta[class_['Extends']].methods.copy()
             derived_methods.update(self.__class_meta[class_['Name']].methods)
             self.__class_meta[class_['Name']].methods = derived_methods
-            self.__class_meta[class_['Name']].methods_keys = self.__class_meta[class_['Name']].methods.keys()
 
         class_meta = self.__class_meta[class_['Name']]
-        self.__methods[class_['Name']] = {}
-        self.__method_types[class_['Name']] = {}
+        self.__methods[class_['Name']] = OrderedDict()
+        self.__method_types[class_['Name']] = OrderedDict()
+
+        if class_['Extends']:
+            self.__methods[class_['Name']].update(self.__methods[class_['Extends']])
+            self.__method_types[class_['Name']].update(self.__method_types[class_['Extends']])
+
         for method_name in class_meta.own_methods_keys:
             method = class_meta.methods[method_name]
             method_type = self.get_function_type(method, class_)
             self.__method_types[class_['Name']][method_name] = method_type
             method_ptr =  Function.new(self.__module, method_type, method['Name'])
             self.__methods[class_['Name']][method['Name']] = method_ptr
-        if class_['Extends']:
-            self.__methods[class_['Name']].update(self.__methods[class_['Extends']])
-        casted_method_ptrs = [method.bitcast(Type.pointer(Type.int(SIZEOF_PTR)))\
-                for method in self.__methods[class_['Name']].values()]
-        self.__class_meta[class_['Name']].casted_method_ptrs = casted_method_ptrs
+
+        casted_method_ptrs = []
+        for method_name in self.__class_meta[class_['Name']].methods.keys():
+            method = self.__methods[class_['Name']][method_name]
+            casted_method_ptrs.append(method.bitcast(Type.pointer(Type.int(SIZEOF_PTR))))
+
         vtable = Constant.array(Type.pointer(Type.int(SIZEOF_PTR)), casted_method_ptrs)
         self.__vtables[class_['Name']] = self.__module.add_global_variable(
                 vtable.type, class_['Name'] + DEFAULT_VTABLE_MANGLING)
@@ -789,7 +802,12 @@ class LLVM_Backend:
             current_function_llvm.args[0].name = 'self'
             self_alloca = self.__llvm_builder.alloca(Type.pointer(self.__class_structs[class_['Name']]), 'self')
             self.__llvm_builder.store(current_function_llvm.args[0], self_alloca)
-            self.__function_envs[-1]['self'] = current_function_llvm.args[0]
+            self.__function_envs[-1]['self'] = self_alloca
+            self_type = {'TypeName': class_['Name'], 'LineNo': -1, 'MetaType': 'Class',
+                'StartPos': -1, 'EndPos': -1, 'Returns': False}
+            self.__function_meta_envs[-1]['self'] = {'Name': 'self', 'LatteType': self_type,
+                        'StartPos': -1, 'EndPos': -1}
+
         for arg, arg_passed in zip(current_function_llvm.args[(1 if class_ else 0):], function['ListArg']):
             arg.name = arg_passed['Name']
             if arg_passed['LatteType']['MetaType'] in ('Primitive', 'Class'):

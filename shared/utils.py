@@ -79,10 +79,11 @@ def get_var(environments, node, class_envs=None, current_class=None):
         class_name = current_class['Name']
         if node['Name'] in class_envs[class_name].attributes:
             return class_envs[class_name].attributes[node['Name']]
+
         while class_envs[class_name].extends:
+            class_name = class_envs[class_name].extends
             if node['Name'] in class_envs[class_name].attributes:
                 return class_envs[class_name].attributes[node['Name']]
-            class_name = class_envs[class_name].extends
 
     raise VariableUndeclared('Variable %s is undeclared, line: %d, pos: %d - %d' %
             (node['Name'], node['LineNo'], node['StartPos'], node['EndPos']))
