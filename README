@@ -1,8 +1,6 @@
 README:
 Parser i lexer wykonane przy użyciu biblioteki PLY (dostępna do instalacji w easy_install).
-Wersja 0.1:
+Wersja 1.0 - java:
 rozszerzenia: brak
-struktura katalogów:
-src/ - pliki źródłowe
-program napisany w pythonie - nie potrzebuje Makefile'a
+
 uruchamianie: ./latte <plik źródłowy>

@@ -79,6 +79,7 @@ class JVM_Backend:
             next_condition_label = local_true_label
             self.emit_expr(expr['Left'], next_condition_label, false_label, next_condition_label, negate)
             self.emit(next_condition_label + ':\n')
+
             self.emit_expr(expr['Right'], jump_if_true, false_label, next_label, negate)
             if not jump_if_true and not jump_if_false:
                 self.emit('iconst_1\n')
