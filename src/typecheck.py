@@ -32,7 +32,6 @@ class LatteSemanticAnalyzer:
                     main must return value of type int, line: %d' %
                     main['LineNo'])
             return
-        # load built-ins:
         self.__functions.update(BUILTINS_INFO)
 
 
@@ -687,6 +686,32 @@ class LatteSemanticAnalyzer:
         self.__current_class = None
         return class_
 
+    def __remove_dead_branches(self, list_of_stmts):
+        new_list_of_stmts = []
+        for stmt in list_of_stmts:
+            if stmt['Type'] == 'IfStmt' and stmt['Condition']['Type'] == 'BoolLiteral':
+                if stmt['Condition']['Value']:
+                    if stmt['Stmt']['Type'] == 'Block':
+                        stmt['Stmt']['Stmts'] = self.__remove_dead_branches(stmt['Stmt']['Stmts'])
+                    new_list_of_stmts.append(stmt['Stmt'])
+            elif stmt['Type'] == 'IfElseStmt' and stmt['Condition']['Type'] == 'BoolLiteral':
+                if stmt['Condition']['Value']:
+                    if stmt['Stmt1']['Type'] == 'Block':
+                        stmt['Stmt1']['Stmts'] = self.__remove_dead_branches(stmt['Stmt1']['Stmts'])
+                    new_list_of_stmts.append(stmt['Stmt1'])
+                else:
+                    if stmt['Stmt2']['Type'] == 'Block':
+                        stmt['Stmt2']['Stmts'] = self.__remove_dead_branches(stmt['Stmt2']['Stmts'])
+                    new_list_of_stmts.append(stmt['Stmt2'])
+            elif stmt['Type'] == 'WhileLoop' and stmt['Condition']['Type'] == 'BoolLiteral':
+                if stmt['Condition']['Value']:
+                    if stmt['Stmt']['Type'] == 'Block':
+                        stmt['Stmt']['Stmts'] = self.__remove_dead_branches(stmt['Stmt']['Stmts'])
+                    new_list_of_stmts.append(stmt)
+            else:
+                new_list_of_stmts.append(stmt)
+        return new_list_of_stmts
+
 
     def __typecheck_program(self):
         new_syntax_tree = []
@@ -695,6 +720,8 @@ class LatteSemanticAnalyzer:
                 continue
             if top_def['Type'] == 'FunDecl':
                 top_def = self.__typecheck_function(top_def)
+                if self.__optimize > 1:
+                    top_def['Body']['Stmts'] = self.__remove_dead_branches(top_def['Body']['Stmts'])
             else:
                 top_def = self.__typecheck_class(top_def)
             new_syntax_tree.append(top_def)

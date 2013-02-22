@@ -11,6 +11,12 @@ all:
 clean:
 	rm -f $(LIB_DIR)/$(RUNTIME_LIB)
 
+test:
+	@ROOT_DIR=`pwd` tests/test.sh
+
+test_bad:
+	@ROOT_DIR=`pwd` tests/test.sh bad
+
 test_clean:
 	find $(TEST_DIR) -type f -name "*.ll" -exec rm -f {} \;
 	find $(TEST_DIR) -type f -name "*.bc" -exec rm -f {} \;
