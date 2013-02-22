@@ -18,5 +18,5 @@ for i in tests/lattests/good/*.class; do
     fi
     diff ${i%.*}.output1 ${i%.*}.output
     rm ${i%.*}.output1
-    counter=$(($y + 1))
+    counter=$(($counter + 1))
 done
