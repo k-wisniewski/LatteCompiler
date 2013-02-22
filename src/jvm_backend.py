@@ -32,6 +32,7 @@ class JVM_Backend:
         self.__locals_counter = 1
         self.__stack_limit = 0
         self.__label_counter = 0
+        self.__bool_exp_generated = False
         self.__functions = functions
         self.__environments = []
 
@@ -82,7 +83,10 @@ class JVM_Backend:
 
             self.emit_expr(expr['Right'], jump_if_true, false_label, next_label, negate)
             if not jump_if_true and not jump_if_false:
-                self.emit('iconst_1\n')
+                if not self.__bool_exp_generated:
+                    self.emit('iconst_1\n')
+                else:
+                    self.__bool_exp_generated = False
                 self.emit('goto %s\n' % end_label)
             if not jump_if_false:
                 self.emit(local_false_label + ':\n')
@@ -161,6 +165,7 @@ class JVM_Backend:
         elif not expr['Value'] and jump_if_false and next_label != jump_if_false:
             self.emit('goto %s\n' % jump_if_false)
         else:
+            self.__bool_exp_generated = True
             self.emit('iconst_%d\n' % ((0 if negate else 1) if expr['Value'] else (1 if negate else 0)))
 
     def emit_expr_unary(self, expr, jump_if_true, jump_if_false, next_label, negate):
